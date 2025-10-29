@@ -1,0 +1,220 @@
+================================================================================
+정치 댓글 전쟁 시뮬레이터 - 프로젝트 구조 및 파일 설명
+================================================================================
+
+📁 persona/ (프로젝트 루트)
+│
+├─ 📁 backend/                  # FastAPI 백엔드 서버 (모듈화 구조)
+│  │
+│  ├─ 📁 config/                # 설정 관리 모듈
+│  │  ├─ __init__.py            # config 모듈 초기화 (settings export)
+│  │  └─ settings.py            # 중앙 설정 관리
+│  │                            - 서버 호스트/포트 설정
+│  │                            - LLM 모델명 설정
+│  │                            - 디바이스(CPU/GPU) 설정
+│  │                            - 환경 변수 지원 (Pydantic BaseSettings)
+│  │
+│  ├─ 📁 core/                  # 핵심 모듈
+│  │  ├─ __init__.py            # core 모듈 초기화 (AppState export)
+│  │  └─ state.py               # 전역 상태 관리 (싱글톤 패턴)
+│  │                            - AppState 클래스: persona_engine, debater_manager 관리
+│  │                            - 전역 상태 초기화 및 리셋 기능
+│  │
+│  ├─ 📁 routes/                # API 라우터 (기능별 분리)
+│  │  ├─ __init__.py            # routes 모듈 초기화 (모든 라우터 export)
+│  │  ├─ comments.py            # 댓글 수집 API 라우터
+│  │  │                         - POST /api/comments/left: 좌파 댓글 추가
+│  │  │                         - POST /api/comments/right: 우파 댓글 추가
+│  │  │                         - GET /api/comments/stats: 댓글 통계 조회
+│  │  │                         - POST /api/comments/reset: 댓글 초기화
+│  │  │
+│  │  ├─ persona.py             # 페르소나 생성 API 라우터
+│  │  │                         - POST /api/comments/generate-persona: LLM 기반 페르소나 생성
+│  │  │
+│  │  ├─ debate.py              # 토론 시뮬레이션 API 라우터
+│  │  │                         - POST /api/debate/start: 토론 시작
+│  │  │                         - POST /api/debate/next: 다음 메시지 생성
+│  │  │                         - GET /api/debate/status: 토론 상태 조회
+│  │  │                         - POST /api/debate/reset: 토론 초기화
+│  │  │
+│  │  └─ health.py              # 헬스체크 API 라우터
+│  │                            - GET /api/health: 서버 상태 및 시스템 정보
+│  │
+│  ├─ 📁 services/              # 비즈니스 로직 레이어
+│  │  ├─ __init__.py            # services 모듈 초기화 (모든 서비스 export)
+│  │  ├─ comment_service.py     # 댓글 관련 비즈니스 로직
+│  │  │                         - 댓글 추가/조회/통계/초기화 로직
+│  │  │
+│  │  ├─ persona_service.py     # 페르소나 생성 비즈니스 로직
+│  │  │                         - LLM 기반 페르소나 생성
+│  │  │                         - 페르소나 조회 및 상태 확인
+│  │  │
+│  │  └─ debate_service.py      # 토론 관리 비즈니스 로직
+│  │                            - 토론 세션 시작/종료
+│  │                            - 메시지 생성 및 상태 관리
+│  │
+│  ├─ __init__.py               # backend 패키지 초기화
+│  │
+│  ├─ ai_debater.py             # AI 토론자 시스템 (LLM 기반)
+│  │                            - AIDebater 클래스: 개별 토론자 (좌파/우파)
+│  │                            - DebaterManager 클래스: 토론자 관리 및 모델 로딩
+│  │                            - skt/kogpt2-base-v2 모델 사용
+│  │
+│  ├─ analyzer.py               # 댓글 분석 엔진
+│  │                            - 규칙 기반 고속 분석 (기본)
+│  │                            - 선택적 LLM 분석 (jhgan/ko-alpaca-7b)
+│  │                            - 논점 추출, 감정 패턴 분석
+│  │
+│  ├─ main.py                   # FastAPI 애플리케이션 진입점 (간소화)
+│  │                            - FastAPI 앱 초기화
+│  │                            - CORS 미들웨어 설정
+│  │                            - 라우터 등록
+│  │                            - 전역 상태 초기화
+│  │
+│  ├─ models.py                 # Pydantic 데이터 모델
+│  │                            - Side, AnalysisResult, Argument, EmotionalPattern
+│  │                            - DebateMessage, DebateState
+│  │                            - CommentSubmission, CommentStats
+│  │                            - API 요청/응답 모델 정의
+│  │
+│  ├─ requirements.txt          # Python 패키지 의존성
+│  │                            - FastAPI, Uvicorn
+│  │                            - Transformers, Torch
+│  │                            - Pydantic, Pydantic-settings
+│  │
+│  └─ sentiment_tracker.py      # 감정 추적 및 주제 전환 시스템
+│                               - 토론 진행 중 감정 레벨 추적
+│                               - 자동 주제 전환 로직
+│                               - 토론 종료 조건 판단
+│
+├─ 📁 model/                    # 페르소나 엔진 모듈
+│  └─ comment_persona_engine.py # 댓글 기반 페르소나 생성 엔진
+│                               - CommentPersonaEngine 클래스
+│                               - 댓글 수집 및 저장
+│                               - LLM 기반 페르소나 생성 (skt/kogpt2-base-v2)
+│                               - 페르소나 프롬프트 생성
+│
+├─ 📄 README.md                 # 프로젝트 메인 문서
+│                               - 프로젝트 소개
+│                               - 설치 방법
+│                               - 사용법 (웹 UI, CLI 테스트)
+│                               - API 엔드포인트 문서
+│                               - 트러블슈팅
+│
+├─ 📄 install.bat               # Windows 설치 스크립트
+│                               - 가상환경 생성
+│                               - 의존성 설치
+│
+├─ 📄 install.sh                # Linux/Mac 설치 스크립트
+│                               - 가상환경 생성
+│                               - 의존성 설치
+│
+├─ 📄 start_server.bat          # Windows 서버 실행 스크립트
+│                               - 가상환경 활성화
+│                               - FastAPI 서버 시작
+│
+├─ 📄 start_server.sh           # Linux/Mac 서버 실행 스크립트
+│                               - 가상환경 활성화
+│                               - FastAPI 서버 시작
+│
+├─ 📄 test_api.py               # API 테스트 스크립트 (CLI 기반)
+│                               - 전체 워크플로우 자동 테스트
+│                               - 컬러풀한 로그 출력
+│                               - 옵션: --messages N, --quick, --help
+│                               - 서버 상태, 댓글 수집, 페르소나 생성, 토론 시뮬레이션
+│
+├─ 📄 test.bat                  # Windows 테스트 실행 스크립트
+│                               - 가상환경 활성화
+│                               - test_api.py 실행
+│
+└─ 📄 test.sh                   # Linux/Mac 테스트 실행 스크립트
+                                - 가상환경 활성화
+                                - test_api.py 실행
+
+================================================================================
+주요 데이터 흐름
+================================================================================
+
+1. 댓글 수집 → 페르소나 생성
+   routes/comments.py → services/comment_service.py 
+   → model/comment_persona_engine.py (LLM 사용)
+
+2. 페르소나 → 토론 시작
+   routes/debate.py → services/debate_service.py 
+   → ai_debater.py (DebaterManager 생성)
+
+3. 토론 메시지 생성
+   routes/debate.py → services/debate_service.py 
+   → ai_debater.py (AIDebater 응답 생성)
+   → model/comment_persona_engine.py (페르소나 프롬프트 제공)
+
+================================================================================
+아키텍처 계층
+================================================================================
+
+┌─────────────────────────────────────────────────────────────┐
+│                     main.py (FastAPI App)                   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│              routes/ (API 엔드포인트 라우터)                 │
+│  comments.py | persona.py | debate.py | health.py          │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│           services/ (비즈니스 로직 레이어)                   │
+│  comment_service | persona_service | debate_service        │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                 core/ (전역 상태 관리)                       │
+│                    state.py (AppState)                      │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│              model/ & LLM 관련 모듈                         │
+│  comment_persona_engine.py | ai_debater.py | analyzer.py   │
+└─────────────────────────────────────────────────────────────┘
+
+================================================================================
+설정 파일
+================================================================================
+
+config/settings.py에서 다음 항목 설정 가능:
+- 서버 호스트/포트
+- LLM 모델명 (페르소나, 토론자, 분석기)
+- 디바이스 (CPU/CUDA)
+- 최소 댓글 수
+- 토론 초기 주제
+- 환경 변수 (.env 파일 지원)
+
+================================================================================
+실행 순서
+================================================================================
+
+1. 설치: install.bat (Windows) 또는 install.sh (Linux/Mac)
+2. 서버 실행: start_server.bat 또는 start_server.sh
+3. CLI 테스트: test.bat 또는 test.sh
+4. API 문서 (선택): http://localhost:8000/docs
+
+================================================================================
+개발/확장 가이드
+================================================================================
+
+새로운 API 엔드포인트 추가:
+1. routes/ 에 새 라우터 파일 생성
+2. services/ 에 비즈니스 로직 추가
+3. models.py 에 필요한 데이터 모델 정의
+4. main.py 에 라우터 등록
+5. routes/__init__.py 에 라우터 export
+
+새로운 설정 추가:
+1. config/settings.py 에 설정 추가
+2. 서비스나 모듈에서 settings import 하여 사용
+
+전역 상태 추가:
+1. core/state.py 의 AppState 클래스에 속성 추가
+2. 초기화 로직 추가
+
+================================================================================
+
