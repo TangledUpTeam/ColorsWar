@@ -4,13 +4,13 @@
 """
 from datetime import datetime
 from typing import Optional, Dict
-from core.state import AppState
-from models import (
+from ..core.state import AppState
+from ..models import (
     DebateState, DebateMessage, Side, AnalysisResult, 
     Argument, EmotionalPattern
 )
-from ai_debater import DebaterManager
-from config.settings import settings
+from ..ai_debater import DebaterManager
+from ..config.settings import settings
 
 
 class DebateService:

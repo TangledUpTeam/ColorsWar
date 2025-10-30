@@ -1,199 +1,39 @@
-# ============================================
-# ColorWar 프로젝트 .gitignore
-# macOS + Windows + Python 협업 환경
-# ============================================
-
-# ==================== Python ====================
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.pytest_cache/
-
-# Virtual environments
+.venv
 venv/
 ENV/
-env/
-.venv
-env.bak/
-venv.bak/
 
-# ==================== 환경 변수 (민감 정보) ====================
+# 환경 변수 (민감 정보)
 .env
 .env.local
-.env.*.local
 
-# 환경 변수 템플릿은 포함 (팀원 가이드용)
-!.env.example
-
-# API 키 백업 (혹시 모를 실수 방지)
-*_api_key.txt
-*_secret.txt
-credentials.json
-
-# ==================== macOS ====================
-# General
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Icon must end with two \r
-Icon
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.aclmodbs
-
-# ==================== Windows ====================
-# Windows thumbnail cache files
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-
-# Dump file
-*.stackdump
-
-# Folder config file
-[Dd]esktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
-# ==================== IDEs / Editors ====================
-# VSCode
-.vscode/
-*.code-workspace
-
-# PyCharm
-.idea/
-*.iml
-*.iws
-*.ipr
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-
-# Vim
-*.swp
-*.swo
-*~
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# ==================== 프로젝트 특화 ====================
-# 팩트체크 모듈
-factcheck/data/*.json.bak
-factcheck/logs/
-factcheck/*.log
-
-# 결과 파일 및 출력
-results*.json
-*_results.json
-output/
-test_results/
-*.test.json
-*_test_output.json
+# 데이터 파일
+*.mp3
+*.mp4
+*.wav
 
 # 모델 캐시
+*.pt
+*.bin
 models/cache/
-.cache/
 
-# 임시 파일
-*.tmp
-*.temp
-temp_*
-tmp_*
+# IDE
+.vscode/
+.idea/
+*.swp
 
-# 데이터베이스
-*.db
-*.sqlite
-*.sqlite3
-
-# ==================== 기타 ====================
-# Compressed files (보통 무거워서 제외)
-*.zip
-*.tar.gz
-*.rar
-*.7z
-
-# Logs
-logs/
+# 로그
 *.log
 
+<<<<<<< HEAD
 # OS generated files
 .DS_Store?
 Thumbs.db?
@@ -208,3 +48,8 @@ Thumbs.db?
 __pycache__/
 *.pyc
 *.pyo
+=======
+# OS
+.DS_Store
+Thumbs.db
+>>>>>>> 467b32d (모든데이터 취합후 공통실행 파일로 처리 | 페르소나, 팩트체크 오류발생 추가디버깅필요)

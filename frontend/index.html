@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ColorWar - 정치 댓글 분석 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 3rem;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+        }
+        
+        .api-link {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        
+        .api-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .module-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        
+        .module-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .module-icon {
+            font-size: 3rem;
+            margin-right: 15px;
+        }
+        
+        .module-title {
+            font-size: 1.8rem;
+            color: #333;
+            font-weight: 700;
+        }
+        
+        .module-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .feature-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result-box.show {
+            display: block;
+        }
+        
+        .result-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .result-content {
+            color: #555;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1 class="title">🎭 ColorWar</h1>
+            <p class="subtitle">YouTube 정치 댓글 분석 → AI 페르소나 생성 → 팩트체크 시스템</p>
+            <a href="/docs" class="api-link">📚 API 문서</a>
+            <a href="/health" class="api-link">🏥 시스템 상태</a>
+        </div>
+        
+        <!-- 모듈 카드 -->
+        <div class="modules">
+            <!-- 1. YouTube 파이프라인 -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon">📹</div>
+                    <div class="module-title">YouTube 파이프라인</div>
+                </div>
+                <p class="module-description">
+                    YouTube 영상의 댓글을 수집하고 분석합니다.
+                </p>
+                <ul class="feature-list">
+                    <li>댓글 자동 수집</li>
+                    <li>좌/우 성향 분류</li>
+                    <li>주제 추출 (BERTopic)</li>
+                    <li>요약 생성</li>
+                </ul>
+                
+                <div class="input-group">
+                    <label>YouTube URL</label>
+                    <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                
+                <div class="input-group">
+                    <label>토론 주제 (선택)</label>
+                    <input type="text" id="youtube-topic" value="현재 정부 정책">
+                </div>
+                
+                <button class="btn" onclick="runYoutubePipeline()">▶️ 파이프라인 실행</button>
+                
+                <div class="loading" id="youtube-loading">
+                    <div class="spinner"></div>
+                    <div>처리 중... (최대 5분 소요)</div>
+                </div>
+                
+                <div class="result-box" id="youtube-result">
+                    <div class="result-title">📊 분석 결과</div>
+                    <div class="result-content" id="youtube-result-content"></div>
+                </div>
+            </div>
+            
+            <!-- 2. AI 페르소나 & 토론 -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon">🤖</div>
+                    <div class="module-title">AI 페르소나</div>
+                </div>
+                <p class="module-description">
+                    수집된 댓글로 AI 페르소나를 생성하고 토론을 시뮬레이션합니다.
+                </p>
+                <ul class="feature-list">
+                    <li>좌/우 페르소나 자동 생성</li>
+                    <li>말투 & 감정 학습</li>
+                    <li>AI 토론 시뮬레이션</li>
+                    <li>실시간 대화 생성</li>
+                </ul>
+                
+                <div class="input-group">
+                    <label>좌파 댓글 (5개 이상, 줄바꿈으로 구분)</label>
+                    <textarea id="left-comments" rows="4" placeholder="좌파 댓글 1&#10;좌파 댓글 2&#10;..."></textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>우파 댓글 (5개 이상, 줄바꿈으로 구분)</label>
+                    <textarea id="right-comments" rows="4" placeholder="우파 댓글 1&#10;우파 댓글 2&#10;..."></textarea>
+                </div>
+                
+                <button class="btn" onclick="generatePersona()">🎭 페르소나 생성</button>
+                
+                <div class="loading" id="persona-loading">
+                    <div class="spinner"></div>
+                    <div>페르소나 생성 중...</div>
+                </div>
+                
+                <div class="result-box" id="persona-result">
+                    <div class="result-title">🎭 페르소나 정보</div>
+                    <div class="result-content" id="persona-result-content"></div>
+                </div>
+            </div>
+            
+            <!-- 3. 팩트체크 -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon">📰</div>
+                    <div class="module-title">팩트체크</div>
+                </div>
+                <p class="module-description">
+                    뉴스 검색을 통해 주장의 진위를 검증합니다.
+                </p>
+                <ul class="feature-list">
+                    <li>네이버 + 해외 뉴스 검색</li>
+                    <li>증거 기반 판정</li>
+                    <li>신뢰도 평가 (10점 척도)</li>
+                    <li>True/False/Uncertain</li>
+                </ul>
+                
+                <div class="input-group">
+                    <label>검증할 주장</label>
+                    <input type="text" id="factcheck-claim" placeholder="예: 윤석열 대통령 탄핵">
+                </div>
+                
+                <button class="btn" onclick="runFactcheck()">🔍 팩트체크 실행</button>
+                
+                <div class="loading" id="factcheck-loading">
+                    <div class="spinner"></div>
+                    <div>검증 중...</div>
+                </div>
+                
+                <div class="result-box" id="factcheck-result">
+                    <div class="result-title">📊 검증 결과</div>
+                    <div class="result-content" id="factcheck-result-content"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 푸터 -->
+        <div class="footer">
+            <p>🎭 ColorWar - 정치 댓글 분석 시스템 v1.0.0</p>
+            <p>YouTube 댓글 분석 → AI 페르소나 생성 → 팩트체크</p>
+        </div>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>
+
