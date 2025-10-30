@@ -1,0 +1,9 @@
+1. Summary.txt파일안에 적혀있는 파일과 learning_p_jh.py, mae_jh.py, start_fight_jh.py 이 세개의 파일을 참고 및 활용하여 개발
+2. 만든 파일 및 사용한 파일은 복사해서 color_prototype 폴더를 만들어 그 안에다가 다 넣어줘
+3. color_prototype 폴더 안에는 파일들을 라우터로 정리해주고 md파일이나 이런 txt파일같은 잡다한 파일들도 라우터로 정리해줘
+4. 전반적인 알고리즘
+   - 페이지 위쪽에 1번 버튼과 2번 버튼 존재
+   - 1번 버튼을 클릭할 경우 Summary.txt 파일 및 프로그램 전체 흐름 요약을 보고 개발 및 구현(실행되도록) 탭이 출력되도록 
+   - 2번 버튼을 클릭할 경우 3,4번에 있는 페르소나 파일 대신 learning_p_jh.py, mae_jh.py, start_fight_jh.py로 대체해서 개발 및 구현(실행되도록록) 탭이 출력되도록
+5. 설치해야할 패키지나 라이브러리 파일 같은 경우에는 require.txt에 정리
+6. api키나 이런게 필요한 경우에는 require_envkey.txt에 정리
