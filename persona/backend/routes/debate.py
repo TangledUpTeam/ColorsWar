@@ -3,9 +3,9 @@
 """
 from typing import Optional
 from fastapi import APIRouter, HTTPException
-from models import DebateStatusResponse, DebateMessageResponse, Side
-from services import DebateService
-from core.state import get_app_state
+from ..models import DebateStatusResponse, DebateMessageResponse, Side
+from ..services.debate_service import DebateService
+from ..core.state import get_app_state
 
 router = APIRouter(prefix="/api/debate", tags=["debate"])
 
