@@ -3,9 +3,10 @@ from typing import List, Dict, Any
 
 class ResultsSaver:
     def __init__(self, base_dir: Path):
-        self.base_dir = base_dir
-        self.comments_leftright_dir = base_dir / "comments_leftright"
-        self.results_dir = base_dir / "results"
+        data_root = base_dir if Path(base_dir).name == "data" else Path(base_dir) / "data"
+        self.base_dir = Path(data_root)
+        self.comments_leftright_dir = self.base_dir / "comments_leftright"
+        self.results_dir = self.base_dir / "results"
         self.comments_leftright_dir.mkdir(parents=True, exist_ok=True)
         self.results_dir.mkdir(parents=True, exist_ok=True)
 

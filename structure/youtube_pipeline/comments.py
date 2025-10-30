@@ -1,47 +1,45 @@
+from __future__ import annotations
+
 from pathlib import Path
 import os
-import json
 from typing import List
-from googleapiclient.discovery import build as _maybe_import_build  # optional import hint; handled at runtime
+
 from dotenv import load_dotenv
 
-# .env 파일 로드 (env 폴더에서)
+# .env 로드 (structure/env/.env)
 load_dotenv(dotenv_path=Path(__file__).parent.parent / "env" / ".env")
+
 
 class CommentCollector:
     def __init__(self, base_dir: Path):
-        self.base_dir = base_dir
-        self.comments_dir = base_dir / "comments"
+        data_root = base_dir if Path(base_dir).name == "data" else Path(base_dir) / "data"
+        self.base_dir = Path(data_root)
+        self.comments_dir = self.base_dir / "comments"
         self.comments_dir.mkdir(parents=True, exist_ok=True)
 
     def collect_comments(self, video_id: str) -> List[str]:
-        # 직접 API 키 설정 (임시)
-        api_key = os.getenv('YOUTUBE_API_KEY') or "AIzaSyB1s4wsQDCKf5GaMWfk81xahB8c8aw0D04"
-        print(f"🔑 YouTube API 키 확인: {'설정됨' if api_key else '없음'}")
-        
+        api_key = os.getenv("YOUTUBE_API_KEY")
+        print(f"- YouTube API 키: {'감지됨' if api_key else '없음'}")
         if not api_key:
-            print("❌ YouTube API 키가 설정되지 않았습니다")
+            print("[에러] YOUTUBE_API_KEY가 설정되지 않았습니다 (structure/env/.env)")
             return []
-        
+
         try:
             from googleapiclient.discovery import build
-            youtube = build('youtube', 'v3', developerKey=api_key)
-            print(f"🔑 YouTube API 연결 성공")
-            
+            youtube = build("youtube", "v3", developerKey=api_key)
+            print("  API 연결 성공")
             all_comments = self.extract_all_comments(youtube, video_id)
-            print(f"💬 API로 수집된 댓글: {len(all_comments)}개")
-            
-            filtered = [c for c in all_comments if len(c) > 10]
-            print(f"💬 필터링된 댓글: {len(filtered)}개")
-            
+            print(f"  API 수집 원본 개수: {len(all_comments)}")
+            filtered = [c for c in all_comments if isinstance(c, str) and len(c.strip()) > 10]
+            print(f"  필터링 후 개수: {len(filtered)}")
             self.save_comments(video_id, filtered)
             return filtered
         except Exception as e:
-            print(f"❌ YouTube API 오류: {e}")
+            print(f"[에러] YouTube API 오류: {e}")
             return []
 
     def extract_all_comments(self, youtube, video_id: str) -> List[str]:
-        all_comments = []
+        all_comments: List[str] = []
         try:
             request = youtube.commentThreads().list(part="snippet,replies", videoId=video_id, maxResults=100)
             while request is not None:
@@ -49,14 +47,16 @@ class CommentCollector:
                 for item in response.get('items', []):
                     try:
                         top = item['snippet']['topLevelComment']['snippet']
-                        text = top.get('textDisplay', top.get('textOriginal',''))
-                        if isinstance(text, str): all_comments.append(text)
+                        text = top.get('textDisplay', top.get('textOriginal', ''))
+                        if isinstance(text, str):
+                            all_comments.append(text)
                     except Exception:
                         pass
                     for r in item.get('replies', {}).get('comments', []):
                         try:
                             rt = r.get('snippet', {}).get('textDisplay', '')
-                            if isinstance(rt, str): all_comments.append(rt)
+                            if isinstance(rt, str):
+                                all_comments.append(rt)
                         except Exception:
                             pass
                 request = youtube.commentThreads().list_next(request, response)
@@ -64,12 +64,12 @@ class CommentCollector:
             return []
         return all_comments
 
-
-    def save_comments(self, video_id: str, comments: List[str]):
+    def save_comments(self, video_id: str, comments: List[str]) -> Path:
         fpath = self.comments_dir / f"{video_id}_comments.txt"
         with open(fpath, "w", encoding="utf-8") as f:
             f.write(f"YouTube 댓글: {video_id}\n")
-            f.write("="*50 + "\n\n")
-            for i, c in enumerate(comments,1):
+            f.write("=" * 50 + "\n\n")
+            for i, c in enumerate(comments, 1):
                 f.write(f"{i}. {c}\n")
         return fpath
+

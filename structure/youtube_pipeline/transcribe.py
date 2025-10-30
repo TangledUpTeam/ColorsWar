@@ -6,9 +6,11 @@ try:
 except Exception:
     whisper = None
 
+
 class Transcriber:
     def __init__(self, base_dir: Path):
-        self.scripts_dir = base_dir / "scripts"
+        data_root = base_dir if Path(base_dir).name == "data" else Path(base_dir) / "data"
+        self.scripts_dir = Path(data_root) / "scripts"
         self.scripts_dir.mkdir(parents=True, exist_ok=True)
 
     def transcribe(self, audio_path: Path, model_name: str = "small") -> tuple[Path, str]:
