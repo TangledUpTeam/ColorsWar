@@ -14,10 +14,10 @@ import json
 import os
 from typing import List, Dict
 from dotenv import load_dotenv
-from models.evidence_searcher import EvidenceSearcher, EvidenceSnippet
-from models.judge_local import LocalFactCheckJudge
-from models.confidence_scorer import ConfidenceScorer
-from models.document_source_universal import UniversalNewsSearchSource
+from .models.evidence_searcher import EvidenceSearcher, EvidenceSnippet
+from .models.judge_local import LocalFactCheckJudge
+from .models.confidence_scorer import ConfidenceScorer
+from .models.document_source_universal import UniversalNewsSearchSource
 
 
 class FactCheckResult:
