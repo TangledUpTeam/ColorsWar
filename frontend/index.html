@@ -243,8 +243,7 @@
         <div class="header">
             <h1 class="title">🎭 ColorWar</h1>
             <p class="subtitle">YouTube 정치 댓글 분석 → AI 페르소나 생성 → 팩트체크 시스템</p>
-            <a href="/docs" class="api-link">📚 API 문서</a>
-            <a href="/health" class="api-link">🏥 시스템 상태</a>
+            
         </div>
         
         <!-- 모듈 카드 -->
@@ -275,7 +274,7 @@
                     <input type="text" id="youtube-topic" value="현재 정부 정책">
                 </div>
                 
-                <button class="btn" onclick="runYoutubePipeline()">▶️ 파이프라인 실행</button>
+                <button class="btn" onclick="runYoutubePipeline()">🧭 주제 검출</button>
                 
                 <div class="loading" id="youtube-loading">
                     <div class="spinner"></div>
@@ -314,7 +313,7 @@
                     <textarea id="right-comments" rows="4" placeholder="우파 댓글 1&#10;우파 댓글 2&#10;..."></textarea>
                 </div>
                 
-                <button class="btn" onclick="generatePersona()">🎭 페르소나 생성</button>
+                <button class="btn" onclick="generatePersona()">⚖️ 페르소나 생성 & 토론 시작</button>
                 
                 <div class="loading" id="persona-loading">
                     <div class="spinner"></div>
@@ -369,7 +368,7 @@
         </div>
     </div>
     
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=3"></script>
 </body>
 </html>
 
