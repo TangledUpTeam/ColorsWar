@@ -3,7 +3,7 @@
 """
 import torch
 from fastapi import APIRouter
-from core.state import get_app_state
+from ..core.state import get_app_state
 
 router = APIRouter(prefix="/api", tags=["health"])
 
