@@ -3,7 +3,7 @@
 댓글 수집, 통계 조회, 초기화 등의 비즈니스 로직
 """
 from typing import List, Dict
-from core.state import AppState
+from ..core.state import AppState
 
 
 class CommentService:

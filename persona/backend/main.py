@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # 설정 및 상태 관리
 from config.settings import settings
-from core.state import get_app_state
+from .core.state import get_app_state
 
 # 라우터
 from routes import (
