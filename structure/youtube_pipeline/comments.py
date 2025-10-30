@@ -6,8 +6,13 @@ from typing import List
 
 from dotenv import load_dotenv
 
-# .env 로드 (structure/env/.env)
-load_dotenv(dotenv_path=Path(__file__).parent.parent / "env" / ".env")
+# 최상위 .env만 사용
+ROOT_ENV = Path(__file__).resolve().parents[2] / ".env"
+try:
+    loaded = load_dotenv(ROOT_ENV, override=True)
+    print(f"[dotenv] loaded(root-only): {ROOT_ENV} exists={ROOT_ENV.exists()} loaded={loaded}")
+except Exception as e:
+    print(f"[dotenv] load error: {e}")
 
 
 class CommentCollector:
@@ -21,7 +26,7 @@ class CommentCollector:
         api_key = os.getenv("YOUTUBE_API_KEY")
         print(f"- YouTube API 키: {'감지됨' if api_key else '없음'}")
         if not api_key:
-            print("[에러] YOUTUBE_API_KEY가 설정되지 않았습니다 (structure/env/.env)")
+            print("[에러] YOUTUBE_API_KEY를 최상위 .env에서 읽지 못했습니다")
             return []
 
         try:

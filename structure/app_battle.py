@@ -15,8 +15,13 @@ import traceback
 import logging
 from dotenv import load_dotenv
 
-# .env 파일 로드
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "env", ".env"))
+# 오직 최상위(.env)만 사용
+ROOT_ENV = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+try:
+    loaded = load_dotenv(ROOT_ENV, override=True)
+    print(f"[dotenv] loaded(app root-only): {ROOT_ENV} -> {loaded}")
+except Exception as e:
+    print(f"[dotenv] app load error: {e}")
 
 # Windows 인코딩 설정
 if sys.platform == "win32":

@@ -19,6 +19,7 @@ class Summarizer:
 
     def extract_keywords_from_summary(self, summary: List[str]) -> List[str]:
         summary_text = " ".join(summary)
+        # 한글 2글자 이상 키워드 추출
         words = re.findall(r"[가-힣]{2,}", summary_text)
         wc: Dict[str, int] = {}
         for w in words:

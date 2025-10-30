@@ -9,9 +9,17 @@ from fastapi.responses import HTMLResponse, FileResponse
 from pathlib import Path
 import sys
 import os
+from dotenv import load_dotenv
 
 # 모듈 경로 추가
 BASE_DIR = Path(__file__).parent.resolve()
+# 오직 최상위(.env)만 사용해 환경 변수 로드
+try:
+    ROOT_ENV = BASE_DIR / ".env"
+    loaded = load_dotenv(ROOT_ENV, override=True)
+    print(f"[dotenv] loaded(main root-only): {ROOT_ENV} -> {loaded}")
+except Exception as e:
+    print(f"[dotenv] main load error: {e}")
 
 # 라우터 임포트
 factcheck_app = None
