@@ -33,23 +33,6 @@ models/cache/
 # 로그
 *.log
 
-<<<<<<< HEAD
-# OS generated files
-.DS_Store?
-Thumbs.db?
-
-# ==================== 협업 주의사항 ====================
-# 아래 파일들은 반드시 Git에 포함되어야 합니다:
-# - requirements.txt
-# - README.md
-# - API_GUIDE.md
-# - .env.example (환경 변수 템플릿, .env는 제외!)
-
-__pycache__/
-*.pyc
-*.pyo
-=======
 # OS
 .DS_Store
 Thumbs.db
->>>>>>> 467b32d (모든데이터 취합후 공통실행 파일로 처리 | 페르소나, 팩트체크 오류발생 추가디버깅필요)

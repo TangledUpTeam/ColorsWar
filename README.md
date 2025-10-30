@@ -292,3 +292,4 @@ curl -X POST http://localhost:8000/api/persona/api/comments/generate-persona
 ---
 
 **즐거운 사용 되세요! 🎉**
+Baseline: a899970 (2025-10-30) — 기준선 확정
