@@ -10,7 +10,7 @@ from typing import Optional
 # 상위 디렉토리를 Python 경로에 추가 (model 모듈 import를 위해)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from model.comment_persona_engine import CommentPersonaEngine
+from ...model.comment_persona_engine import CommentPersonaEngine
 from ..models import DebateState
 
 

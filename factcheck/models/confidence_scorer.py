@@ -3,8 +3,8 @@
 """
 from typing import List, Dict
 from datetime import datetime, timedelta
-from models.evidence_searcher import EvidenceSnippet
-from models.judge_local import JudgeResult
+from .evidence_searcher import EvidenceSnippet
+from .judge_local import JudgeResult
 
 class ConfidenceScore:
     """신뢰도 점수"""

@@ -17,10 +17,10 @@ from typing import List, Optional
 import os
 from dotenv import load_dotenv
 
-from models.evidence_searcher import EvidenceSearcher
-from models.judge_local import LocalFactCheckJudge
-from models.confidence_scorer import ConfidenceScorer
-from models.document_source_universal import UniversalNewsSearchSource
+from .models.evidence_searcher import EvidenceSearcher
+from .models.judge_local import LocalFactCheckJudge
+from .models.confidence_scorer import ConfidenceScorer
+from .models.document_source_universal import UniversalNewsSearchSource
 
 # 환경변수 로드
 load_dotenv()

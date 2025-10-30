@@ -3,7 +3,7 @@
 Ollama, HuggingFace 로컬 모델 등 사용 가능
 """
 from typing import List, Dict
-from models.evidence_searcher import EvidenceSnippet
+from .evidence_searcher import EvidenceSnippet
 
 
 class JudgeResult:

@@ -19,18 +19,10 @@ comments_router = persona_router = debate_router = persona_health_router = None
 youtube_router = topic_router = None
 
 try:
-    # Factcheck 모듈
-    factcheck_sys_path = str(BASE_DIR / "factcheck")
-    if factcheck_sys_path not in sys.path:
-        sys.path.insert(0, factcheck_sys_path)
-    
-    # api.py에서 app 임포트
-    import importlib.util
-    api_path = BASE_DIR / "factcheck" / "api.py"
-    spec = importlib.util.spec_from_file_location("factcheck_api", api_path)
-    factcheck_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(factcheck_module)
-    factcheck_app = factcheck_module.app
+    # Factcheck 모듈 - 패키지로 정상 임포트
+    if str(BASE_DIR) not in sys.path:
+        sys.path.insert(0, str(BASE_DIR))
+    from factcheck.api import app as factcheck_app
     print("✓ Factcheck 모듈 로드 완료")
 except Exception as e:
     print(f"⚠️  Factcheck 모듈 로드 실패: {e}")
@@ -38,20 +30,14 @@ except Exception as e:
     traceback.print_exc()
 
 try:
-    # Persona 모듈 - persona와 persona/backend 모두 추가
-    persona_sys_path = str(BASE_DIR / "persona")
-    persona_backend_path = str(BASE_DIR / "persona" / "backend")
-    if persona_sys_path not in sys.path:
-        sys.path.insert(0, persona_sys_path)
-    if persona_backend_path not in sys.path:
-        sys.path.insert(0, persona_backend_path)
-    
-    # backend.routes에서 라우터들 임포트
-    from backend.routes import (
+    # Persona 모듈 - 패키지 기준 임포트
+    if str(BASE_DIR) not in sys.path:
+        sys.path.insert(0, str(BASE_DIR))
+    from persona.backend.routes import (
         comments_router,
         persona_router,
         debate_router,
-        health_router as persona_health_router
+        health_router as persona_health_router,
     )
     print("✓ Persona 모듈 로드 완료")
 except Exception as e:
