@@ -6,8 +6,8 @@
 """
 from typing import List
 import re
-from models.document_source import DocumentSource, Document, DuckDuckGoSearchSource
-from models.document_source_naver import NaverNewsSearchSource
+from .document_source import DocumentSource, Document, DuckDuckGoSearchSource
+from .document_source_naver import NaverNewsSearchSource
 
 
 class UniversalNewsSearchSource(DocumentSource):

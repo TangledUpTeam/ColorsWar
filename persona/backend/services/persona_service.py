@@ -3,8 +3,8 @@
 수집된 댓글을 기반으로 LLM을 통해 페르소나를 생성합니다.
 """
 from typing import Dict, Optional
-from core.state import AppState
-from config.settings import settings
+from ..core.state import AppState
+from ..config.settings import settings
 
 
 class PersonaService:
