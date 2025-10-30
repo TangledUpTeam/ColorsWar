@@ -205,3 +205,6 @@ Thumbs.db?
 # - API_GUIDE.md
 # - .env.example (환경 변수 템플릿, .env는 제외!)
 
+__pycache__/
+*.pyc
+*.pyo
