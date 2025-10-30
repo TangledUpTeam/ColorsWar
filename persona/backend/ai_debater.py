@@ -10,7 +10,7 @@ import sys, os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from model.comment_persona_engine import CommentPersonaEngine
-from models import Side, DebateMessage, AnalysisResult, DebateState
+from .models import Side, DebateMessage, AnalysisResult, DebateState
 
 
 class AIDebater:

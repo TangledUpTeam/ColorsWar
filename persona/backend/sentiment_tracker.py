@@ -4,7 +4,7 @@
 """
 import random
 from typing import List, Optional
-from models import DebateState, DebateMessage, Side, AnalysisResult
+from .models import DebateState, DebateMessage, Side, AnalysisResult
 
 
 class SentimentTracker:

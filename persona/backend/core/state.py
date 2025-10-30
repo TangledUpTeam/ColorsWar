@@ -11,7 +11,7 @@ from typing import Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from model.comment_persona_engine import CommentPersonaEngine
-from models import DebateState
+from ..models import DebateState
 
 
 class AppState:

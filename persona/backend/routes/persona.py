@@ -2,8 +2,8 @@
 페르소나 생성 API 라우터
 """
 from fastapi import APIRouter, HTTPException
-from services import PersonaService
-from core.state import get_app_state
+from ..services.persona_service import PersonaService
+from ..core.state import get_app_state
 
 router = APIRouter(prefix="/api/comments", tags=["persona"])
 

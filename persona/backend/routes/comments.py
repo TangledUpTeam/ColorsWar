@@ -2,9 +2,9 @@
 댓글 수집 API 라우터
 """
 from fastapi import APIRouter, HTTPException
-from models import CommentSubmission, CommentStats
-from services import CommentService
-from core.state import get_app_state
+from ..models import CommentSubmission, CommentStats
+from ..services.comment_service import CommentService
+from ..core.state import get_app_state
 
 router = APIRouter(prefix="/api/comments", tags=["comments"])
 

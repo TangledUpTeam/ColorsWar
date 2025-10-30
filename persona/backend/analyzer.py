@@ -5,7 +5,7 @@ jhgan/ko-alpaca-7b를 사용하여 감정 분석 및 성향 분류
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from typing import List
-from models import AnalysisResult, Argument, EmotionalPattern
+from .models import AnalysisResult, Argument, EmotionalPattern
 
 
 class CommentAnalyzer:
