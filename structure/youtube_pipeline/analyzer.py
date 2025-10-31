@@ -258,8 +258,8 @@ class Analyzer:
 
         return {
             'comments': final,
-            'statistics': final_stats,
+            'statistics': stats,
             'left_comments': [c['text'] for c in top_left],
             'right_comments': [c['text'] for c in top_right],
-            'similarity_stats': sim_stats
+            'similarity_stats': {}
         }
