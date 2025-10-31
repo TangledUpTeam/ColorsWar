@@ -1,12 +1,12 @@
 """
-AI 토론자 시스템 (LLM 기반, CPU 경량 버전)
-페르소나를 반영해 새로운 댓글 스타일로 토론 생성
+AI 토론자 시스템 (OpenAI GPT-4o-mini 기반)
+페르소나를 반영하여 keywords 기반으로 토론 생성
+중복 방지 로직 포함
 """
 
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from typing import Optional
-import sys, os
+import os
+from typing import Optional, List
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from model.comment_persona_engine import CommentPersonaEngine
@@ -14,54 +14,80 @@ from .models import Side, DebateMessage, AnalysisResult, DebateState
 
 
 class AIDebater:
-    """AI 토론자 (경량 LLM 기반)"""
+    """AI 토론자 (OpenAI 기반)"""
 
-    def __init__(self, side: Side, analysis: AnalysisResult, persona_engine: CommentPersonaEngine, llm_pipeline):
+    def __init__(
+        self, 
+        side: Side, 
+        analysis: AnalysisResult, 
+        persona_engine: CommentPersonaEngine,
+        openai_api_key: Optional[str] = None,
+        model: str = "gpt-4o-mini",
+        keywords: Optional[List[str]] = None
+    ):
+        """
+        Args:
+            side: 토론자의 정치 성향 (LEFT/RIGHT)
+            analysis: 댓글 분석 결과
+            persona_engine: 페르소나 엔진
+            openai_api_key: OpenAI API 키
+            model: OpenAI 모델명
+            keywords: 토론 주제 키워드 리스트
+        """
         self.side = side
         self.analysis = analysis
         self.persona_engine = persona_engine
-        self.llm = llm_pipeline  # ✅ pipeline 공유
-        self.device = "cpu"
+        self.keywords = keywords or []
+        
+        # OpenAI 클라이언트 초기화
+        try:
+            from openai import OpenAI
+            
+            api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise ValueError("OpenAI API 키가 설정되지 않았습니다.")
+            
+            self.client = OpenAI(api_key=api_key)
+            self.model = model
+            
+        except ImportError:
+            raise ImportError("openai 패키지가 설치되지 않았습니다. 'pip install openai'를 실행하세요.")
+        except Exception as e:
+            raise RuntimeError(f"OpenAI 클라이언트 초기화 실패: {e}")
 
-    def generate_response(self, state: DebateState, opponent_message: Optional[DebateMessage] = None) -> str:
-        """토론 응답 생성 (경량 모델 기반)"""
+        # 중복 방지를 위한 이전 응답 저장
+        self.previous_responses: List[str] = []
+
+    def generate_response(
+        self, 
+        state: DebateState, 
+        opponent_message: Optional[DebateMessage] = None
+    ) -> str:
+        """
+        토론 응답 생성 (OpenAI 기반, 중복 방지)
+        
+        Args:
+            state: 현재 토론 상태
+            opponent_message: 상대방의 마지막 메시지
+            
+        Returns:
+            생성된 응답 문자열
+        """
         side_str = "left" if self.side == Side.LEFT else "right"
+        side_name = "진보(좌파)" if self.side == Side.LEFT else "보수(우파)"
+        
+        # 페르소나 프롬프트 가져오기
         persona_prompt = self.persona_engine.get_persona_prompt(side_str)
 
-        conversation = ""
-        for msg in state.messages[-4:]:
+        # 최근 대화 내역 구성 (최대 6개)
+        conversation_history = ""
+        for msg in state.messages[-6:]:
             speaker = "나" if msg.side == self.side else "상대"
-            conversation += f"{speaker}: {msg.content}\n"
+            conversation_history += f"{speaker}: {msg.content}\n"
 
-        topic = state.current_topic or "정치 논쟁"
-        opponent_text = opponent_message.content if opponent_message else "이 사안에 대해 너의 생각은 뭐야?"
+        # 상대방 메시지
+        opponent_text = opponent_message.content if opponent_message else "이 주제에 대해 당신의 의견을 말해주세요."
 
-<<<<<<< Updated upstream
-        prompt = f"""
-{persona_prompt}
-
-현재 주제: {topic}
-
-최근 대화:
-{conversation}
-상대: {opponent_text}
-나:"""
-
-        try:
-            result = self.llm(
-                prompt,
-                max_new_tokens=150,
-                temperature=0.8,
-                do_sample=True,
-                top_p=0.9,
-                pad_token_id=self.llm.tokenizer.eos_token_id
-            )[0]["generated_text"]
-
-            response = result[len(prompt):].strip()
-            if len(response) > 200:
-                response = response.split(".")[0] + "."
-            return response or "그 부분은 좀 더 생각해봐야겠네요."
-=======
         # 토론 주제 (summary_sentences) 구성
         topic_summary = "\n".join(self.keywords) if self.keywords else "정치, 사회"
 
@@ -129,21 +155,33 @@ class AIDebater:
                 self.previous_responses = self.previous_responses[-20:]
             
             return generated_text or f"{side_name}의 입장에서 더 생각해볼 필요가 있겠네요."
->>>>>>> Stashed changes
 
         except Exception as e:
-            print(f"⚠ 응답 생성 실패 ({self.side.name}): {e}")
-            return "음... 다시 생각해볼게요."
+            print(f"⚠️ {side_name} 응답 생성 실패: {e}")
+            return f"음... 이 부분은 좀 더 생각해봐야겠어요. ({side_name})"
 
 
 class DebaterManager:
-    """토론자 관리 (경량 모델 + LLM 파이프라인 공유)"""
+    """토론자 관리 (OpenAI 기반)"""
 
-    def __init__(self, analysis: AnalysisResult, persona_engine: CommentPersonaEngine):
+    def __init__(
+        self, 
+        analysis: AnalysisResult, 
+        persona_engine: CommentPersonaEngine,
+        openai_api_key: Optional[str] = None,
+        model: str = "gpt-4o-mini",
+        keywords: Optional[List[str]] = None
+    ):
+        """
+        Args:
+            analysis: 댓글 분석 결과
+            persona_engine: 페르소나 엔진
+            openai_api_key: OpenAI API 키
+            model: OpenAI 모델명
+            keywords: 토론 주제 키워드 리스트
+        """
         self.analysis = analysis
         self.persona_engine = persona_engine
-<<<<<<< Updated upstream
-=======
         self.keywords = keywords or []
         
         print(f"\n{'='*60}")
@@ -160,40 +198,45 @@ class DebaterManager:
         else:
             print("   (주제 없음)")
         print(f"{'='*60}\n")
->>>>>>> Stashed changes
 
-        # ✅ 경량 모델 설정
-        self.model_name = "skt/kogpt2-base-v2"
-        self.device = "cpu"
-        print(f"🤖 대화 모델 로딩 중: {self.model_name} ({self.device})")
+        # 좌파/우파 토론자 생성
+        self.left_debater = AIDebater(
+            Side.LEFT, 
+            analysis, 
+            persona_engine,
+            openai_api_key,
+            model,
+            keywords
+        )
+        
+        self.right_debater = AIDebater(
+            Side.RIGHT, 
+            analysis, 
+            persona_engine,
+            openai_api_key,
+            model,
+            keywords
+        )
+        
+        print("✅ AI 토론자 초기화 완료!\n")
 
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            model = AutoModelForCausalLM.from_pretrained(
-                self.model_name,
-                torch_dtype=torch.float32,
-                device_map=None,
-                low_cpu_mem_usage=True
-            ).to(self.device)
-
-            llm_pipeline = pipeline(
-                "text-generation",
-                model=model,
-                tokenizer=tokenizer,
-                device=-1
-            )
-
-            print("✓ 대화 모델 로딩 완료! (CPU 경량 모드)\n")
-        except Exception as e:
-            print(f"❌ 모델 로딩 실패: {e}")
-            llm_pipeline = None
-
-        # 두 토론자 생성
-        self.left_debater = AIDebater(Side.LEFT, analysis, persona_engine, llm_pipeline)
-        self.right_debater = AIDebater(Side.RIGHT, analysis, persona_engine, llm_pipeline)
-
-    def generate_response(self, side: Side, state: DebateState, opponent_message: Optional[DebateMessage] = None):
-        """토론자별 응답 생성"""
+    def generate_response(
+        self, 
+        side: Side, 
+        state: DebateState, 
+        opponent_message: Optional[DebateMessage] = None
+    ) -> str:
+        """
+        특정 성향의 토론자 응답 생성
+        
+        Args:
+            side: 응답할 토론자의 성향
+            state: 현재 토론 상태
+            opponent_message: 상대방의 마지막 메시지
+            
+        Returns:
+            생성된 응답 문자열
+        """
         if side == Side.LEFT:
             return self.left_debater.generate_response(state, opponent_message)
         else:
