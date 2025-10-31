@@ -86,6 +86,7 @@ class EvidenceSearcher:
         self.top_n_bm25 = top_n_bm25
         self.top_n_final = top_n_final
         self.min_relevance = min_relevance if min_relevance is not None else 0.65  # 기본값 0.65 (다양한 의견 수용)
+        self._last_search_metadata = {}  # 마지막 검색 메타데이터
         
         self.documents = []
         self.snippets = []
@@ -168,7 +169,11 @@ class EvidenceSearcher:
         
         # 스니펫이 없으면 에러
         if not self.snippets:
-            raise ValueError("문서에서 스니펫을 추출할 수 없습니다.")
+            raise ValueError(
+                f"문서에서 스니펫을 추출할 수 없습니다.\n"
+                f"수집된 문서: {len(self.documents)}개\n"
+                f"팁: 더 일반적인 키워드를 사용해보세요."
+            )
         
         # BM25 인덱스 구축
         tokenized_snippets = [clean_text(s.text).split() for s in self.snippets]
@@ -197,8 +202,8 @@ class EvidenceSearcher:
         Returns:
             Evidence 스니펫 리스트 (상위 N개)
         """
-        # 동적 문서 로드 (웹 검색 등)
-        if self.document_source and not self.snippets:
+        # 동적 문서 로드 (웹 검색 등) - 매번 새로 검색
+        if self.document_source:
             print(f"  📥 문서 검색 중: {claim}")
             documents = self.document_source.search(claim)
             self._build_index(documents)
@@ -279,7 +284,13 @@ class EvidenceSearcher:
                     print(f"        ... 외 {len(excluded)-5}개")
                 print()  # 빈 줄
         
-        # 제외율 페널티 제거로 메타데이터 불필요
+        # 제외된 증거 메타데이터 저장 (API 응답용)
+        self._last_search_metadata = {
+            'total_found': len(candidates),
+            'excluded_count': excluded_count,
+            'returned_count': len(top_candidates)
+        }
+        
         return top_candidates
     
     def get_stats(self) -> Dict:

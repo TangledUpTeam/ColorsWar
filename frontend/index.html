@@ -229,7 +229,44 @@
         .btn-secondary {
             background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
             box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
-            margin-top: 16px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: auto;
+            white-space: nowrap;
+        }
+        
+        .claim-item {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .claim-item:hover {
+            background: #e9ecef;
+            border-color: #3498db;
+            transform: translateX(4px);
+        }
+        
+        .claim-item.selected {
+            background: #e7f3ff;
+            border-color: #3498db;
+        }
+        
+        .claim-score {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-left: 10px;
+            font-weight: 600;
         }
         
         .btn-secondary:hover {
@@ -560,11 +597,21 @@
 
             <div class="input-group">
                 <label for="factcheck-claim">💬 검증할 주장</label>
-                <input 
-                    type="text" 
-                    id="factcheck-claim" 
-                    placeholder="예: 비트코인 가격이 급등했다"
-                />
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input 
+                        type="text" 
+                        id="factcheck-claim" 
+                        placeholder="예: 비트코인 가격이 급등했다"
+                        style="flex: 1;"
+                    />
+                    <button class="btn-secondary" onclick="extractClaims()" title="영상에서 주장 자동 추출">
+                        📋 주장 추출
+                    </button>
+                </div>
+                  <div id="extracted-claims" style="display: none; margin-top: 10px;">
+                      <p style="font-size: 13px; color: #666; margin-bottom: 8px;">📊 영상+댓글 분석 결과 (팩트체크 포인트)</p>
+                      <div id="claims-list" style="display: flex; flex-direction: column; gap: 5px;"></div>
+                  </div>
             </div>
 
             <button class="btn" onclick="runFactcheck()">
@@ -589,6 +636,6 @@
         </div>
     </div>
     
-    <script src="/static/app.js?v=11"></script>
+    <script src="/static/app.js?v=17"></script>
 </body>
 </html>

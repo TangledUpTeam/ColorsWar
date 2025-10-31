@@ -95,6 +95,12 @@ async function runYoutubePipeline() {
         
         const data = await response.json();
         
+        // 비디오 ID 저장 (주장 추출용)
+        if (data.video_id) {
+            currentVideoId = data.video_id;
+            console.log('📹 비디오 ID 저장:', currentVideoId);
+        }
+        
         if (!response.ok) {
             addLog('youtube-log', `❌ 오류: ${data.detail || '처리 실패'}`, 'error');
             throw new Error(data.detail || '처리 실패');
@@ -409,9 +415,158 @@ function formatPersonaResult(data) {
     return text;
 }
 
+// ==================== 주장 추출 ====================
+let currentVideoId = null;  // 전역 변수로 비디오 ID 저장
+
+async function extractClaims() {
+    // 최근 분석한 비디오 ID 가져오기
+    if (!currentVideoId) {
+        alert('먼저 "주제 검출"을 실행해주세요.');
+        return;
+    }
+    
+    try {
+        console.log('📋 주장 추출 요청:', currentVideoId);
+        
+        const response = await fetch(`${API_BASE}/api/claim-extraction/extract`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                video_id: currentVideoId,
+                top_k: 3  // 팩트체크 포인트 3개
+            })
+        });
+        
+        const data = await response.json();
+        
+        console.log('📋 주장 추출 응답:', data);
+        
+        if (!response.ok) {
+            throw new Error(data.detail || '주장 추출 실패');
+        }
+        
+        if (!data.success || !data.claims || data.claims.length === 0) {
+            alert('팩트체크 가능한 주장을 찾을 수 없습니다.');
+            return;
+        }
+        
+        // 추출된 주장 표시
+        displayExtractedClaims(data.claims);
+        
+    } catch (error) {
+        console.error('주장 추출 오류:', error);
+        alert(`주장 추출 실패: ${error.message}`);
+    }
+}
+
+function displayExtractedClaims(claims) {
+    const container = document.getElementById('extracted-claims');
+    const list = document.getElementById('claims-list');
+    
+    // 리스트 초기화
+    list.innerHTML = '';
+    
+    // 각 주장을 클릭 가능한 항목으로 표시
+    claims.forEach((claim, index) => {
+        const item = document.createElement('div');
+        item.className = 'claim-item';
+        item.innerHTML = `
+            <span>${claim.claim}</span>
+            <span class="claim-score">${(claim.score * 100).toFixed(0)}점</span>
+        `;
+        
+        // 클릭 시 입력창에 자동 입력 + 백엔드에서 키워드 추출 후 팩트체크
+        item.onclick = async () => {
+            // 원본 댓글 표시
+            document.getElementById('factcheck-claim').value = claim.claim;
+            
+            // 선택된 항목 하이라이트
+            document.querySelectorAll('.claim-item').forEach(el => el.classList.remove('selected'));
+            item.classList.add('selected');
+            
+            // 팩트체크 결과 창으로 스크롤
+            document.getElementById('factcheck-claim').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 자동으로 팩트체크 실행 (백엔드에서 키워드 추출)
+            await runFactcheckWithKeywordExtraction(claim.claim);
+        };
+        
+        list.appendChild(item);
+    });
+    
+    // 컨테이너 표시
+    container.style.display = 'block';
+}
+
 // ==================== 팩트체크 ====================
+
+/**
+ * 원본 댓글 → 백엔드 키워드 추출 → 팩트체크
+ */
+async function runFactcheckWithKeywordExtraction(originalClaim) {
+    const loading = document.getElementById('loading');
+    const resultDiv = document.getElementById('factcheck-result');
+    
+    loading.classList.add('show');
+    resultDiv.textContent = '📝 키워드 추출 중...';
+    
+    try {
+        console.log('🔑 키워드 추출 요청:', originalClaim);
+        
+        // 1단계: 백엔드에서 키워드 추출
+        const keywordResponse = await fetch(`${API_BASE}/api/claim-extraction/extract-keywords`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ claim: originalClaim })
+        });
+        
+        if (!keywordResponse.ok) {
+            throw new Error('키워드 추출 실패');
+        }
+        
+        const keywordData = await keywordResponse.json();
+        const keywords = keywordData.keywords;
+        
+        console.log('✅ 추출된 키워드:', keywords);
+        console.log('📋 원본 댓글:', originalClaim);
+        
+        resultDiv.textContent = `🔍 검색 키워드: "${keywords}"\n\n팩트체크 진행 중...`;
+        
+        // 2단계: 키워드로 팩트체크
+        const factcheckResponse = await fetch(`${API_BASE}/api/factcheck/factcheck`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ claim: keywords })
+        });
+        
+        if (!factcheckResponse.ok) {
+            throw new Error('팩트체크 실패');
+        }
+        
+        const factcheckData = await factcheckResponse.json();
+        
+        console.log('✅ 팩트체크 결과:', factcheckData);
+        
+        // 결과 표시 (원본 댓글 + 검색 키워드 + 팩트체크 결과)
+        resultDiv.innerHTML = formatFactcheckResultWithKeywords(originalClaim, keywords, factcheckData);
+        
+    } catch (error) {
+        console.error('❌ 오류:', error);
+        resultDiv.textContent = `❌ 오류 발생: ${error.message}`;
+    } finally {
+        loading.classList.remove('show');
+    }
+}
+
+/**
+ * 기존 팩트체크 (수동 입력용)
+ */
 async function runFactcheck() {
-    const claim = document.getElementById('factcheck-claim').value;
+    const claim = document.getElementById('factcheck-claim').value.trim();
+    
+    console.log('🔍 팩트체크 요청:', claim);
     
     if (!claim) {
         alert('검증할 주장을 입력해주세요');
@@ -426,6 +581,8 @@ async function runFactcheck() {
         loading.classList.add('show');
         result.classList.remove('show');
         
+        console.log('📤 전송 데이터:', { claim: claim });
+        
         const response = await fetch(`${API_BASE}/api/factcheck/factcheck`, {
             method: 'POST',
             headers: {
@@ -437,6 +594,8 @@ async function runFactcheck() {
         });
         
         const data = await response.json();
+        
+        console.log('📥 응답 데이터:', data);
         
         if (!response.ok) {
             throw new Error(data.detail || '팩트체크 실패');
@@ -453,37 +612,208 @@ async function runFactcheck() {
     }
 }
 
-function formatFactcheckResult(data) {
+/**
+ * 원본 댓글 + 키워드 + 팩트체크 결과 포맷
+ */
+function formatFactcheckResultWithKeywords(originalClaim, keywords, data) {
     let text = '';
     
-    text += `📋 주장: ${data.claim}\n\n`;
+    // 원본 댓글
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `💬 원본 댓글\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${originalClaim}\n\n`;
     
+    // 검색 키워드
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `🔍 검색 키워드\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${keywords}\n\n`;
+    
+    // 판정 결과 (볼드, 한글)
     const verdictEmoji = {
         'True': '✅',
         'False': '❌',
         'Uncertain': '❓'
     };
     
-    text += `${verdictEmoji[data.verdict] || '?'} 판정: ${data.verdict}\n`;
-    text += `⭐ 신뢰도: ${data.confidence_score}/10 (${data.confidence_level})\n\n`;
+    const verdictKorean = {
+        'True': '사실',
+        'False': '거짓',
+        'Uncertain': '판단 불가'
+    };
     
-    text += `💡 판정 근거:\n${data.reasoning}\n\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${verdictEmoji[data.verdict] || '?'} 판정 결과\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${verdictKorean[data.verdict] || data.verdict}\n\n`;
     
+    // 신뢰도 (볼드)
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `⭐ 신뢰도 점수\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${data.confidence_score}/10 (${data.confidence_level})\n\n`;
+    
+    // 판정 근거
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `💡 판정 근거\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${data.reasoning}\n\n`;
+    
+    // 참고 증거
     if (data.evidences && data.evidences.length > 0) {
-        text += `📚 참고 증거 (${data.evidences.length}개):\n\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `📚 참고 증거 (${data.evidences.length}개)\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        
         data.evidences.forEach((ev, idx) => {
-            text += `[${idx + 1}] ${ev.source} (${ev.date})\n`;
-            text += `    ${ev.text}\n`;
-            text += `    관련도: ${ev.relevance}\n\n`;
+            text += `[증거 ${idx + 1}]\n`;
+            text += `📰 출처: ${ev.source}\n`;
+            text += `📅 날짜: ${ev.date}\n`;
+            text += `🎯 관련도: ${ev.relevance}\n`;
+            text += `📝 내용: ${ev.text}\n\n`;
         });
     }
     
-    if (data.score_breakdown) {
-        text += `📊 신뢰도 세부:\n`;
-        for (const [key, value] of Object.entries(data.score_breakdown)) {
-            text += `  - ${key}: ${value}\n`;
-        }
+    // 제외된 증거 정보
+    if (data.search_metadata && data.search_metadata.excluded_count > 0) {
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `🗑️  관련성 낮은 증거 (제외됨)\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `총 ${data.search_metadata.total_found}개 문서 중 ${data.search_metadata.excluded_count}개 제외\n`;
+        text += `(관련도 임계값 미달)\n\n`;
     }
+    
+    // 신뢰도 세부 (선택적)
+    if (data.score_breakdown && Object.keys(data.score_breakdown).length > 0) {
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `📊 신뢰도 세부 분석\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        
+        // 한글 레이블 매핑
+        const labelMap = {
+            'multiple_sources': '✅ 복수 출처',
+            'recency': '📅 최신성',
+            'matching_strength': '🎯 매칭 강도',
+            'contradiction_penalty': '⚠️ 모순 페널티',
+            'evidence_diversity': '🌐 증거 다양성',
+            '문서_수': '📄 문서 수',
+            '스니펫_생성': '✂️ 스니펫 생성',
+            '관련_증거': '🔗 관련 증거'
+        };
+        
+        for (const [key, value] of Object.entries(data.score_breakdown)) {
+            const label = labelMap[key] || key;
+            text += `  ${label}: ${value}\n`;
+        }
+        text += '\n';
+    }
+    
+    return text;
+}
+
+/**
+ * 기존 팩트체크 결과 포맷 (수동 입력용)
+ */
+function formatFactcheckResult(data) {
+    let text = '';
+    
+    // 주장 (볼드)
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `📋 검증 주장\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${data.claim}\n\n`;
+    
+    // 판정 결과 (볼드, 한글)
+    const verdictEmoji = {
+        'True': '✅',
+        'False': '❌',
+        'Uncertain': '❓'
+    };
+    
+    const verdictKorean = {
+        'True': '사실',
+        'False': '거짓',
+        'Uncertain': '판단 불가'
+    };
+    
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${verdictEmoji[data.verdict] || '?'} 판정 결과\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${verdictKorean[data.verdict] || data.verdict}\n\n`;
+    
+    // 신뢰도 (볼드)
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `⭐ 신뢰도 점수\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${data.confidence_score}/10 (${data.confidence_level})\n\n`;
+    
+    // 판정 근거
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `💡 판정 근거\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `${data.reasoning}\n\n`;
+    
+    // 참고 증거
+    if (data.evidences && data.evidences.length > 0) {
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `📚 참고 증거 (${data.evidences.length}개)\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        
+        data.evidences.forEach((ev, idx) => {
+            text += `[증거 ${idx + 1}]\n`;
+            text += `📰 출처: ${ev.source}\n`;
+            text += `📅 날짜: ${ev.date}\n`;
+            text += `🎯 관련도: ${ev.relevance}\n`;
+            text += `📝 내용: ${ev.text}\n\n`;
+        });
+    }
+    
+    // 제외된 증거 정보
+    if (data.search_metadata && data.search_metadata.excluded_count > 0) {
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `🗑️  관련성 낮은 증거 (제외됨)\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `총 ${data.search_metadata.total_found}개 문서 중 ${data.search_metadata.excluded_count}개 제외\n`;
+        text += `(관련도 임계값 미달)\n\n`;
+    }
+    
+    // 신뢰도 세부 (선택적)
+    if (data.score_breakdown && Object.keys(data.score_breakdown).length > 0) {
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `📊 신뢰도 세부 분석\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        
+        // 한글 레이블 매핑
+        const labelMap = {
+            'multiple_sources': '복수 출처',
+            'recency': '최신성 (12개월)',
+            'matching_strength': '매칭 강도',
+            'contradiction_penalty': '모순 페널티',
+            'evidence_diversity': '증거 다양성',
+            '문서_수': '문서 수',
+            '스니펫_생성': '스니펫 생성',
+            '관련_증거': '관련 증거'
+        };
+        
+        for (const [key, value] of Object.entries(data.score_breakdown)) {
+            const label = labelMap[key] || key;
+            
+            // 점수에 따른 이모지
+            let emoji = '';
+            if (typeof value === 'number') {
+                if (value > 0) emoji = '✅';
+                else if (value < 0) emoji = '⚠️ ';
+                else emoji = '⬜';
+                text += `  ${emoji} ${label}: ${value > 0 ? '+' : ''}${value}\n`;
+            } else {
+                text += `  • ${label}: ${value}\n`;
+            }
+        }
+        text += `\n`;
+    }
+    
+    text += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     
     return text;
 }
