@@ -43,24 +43,37 @@ class CommentCollector:
     def extract_all_comments(self, youtube, video_id: str) -> List[str]:
         all_comments = []
         try:
+            print(f"🔍 댓글 요청 시작: video_id={video_id}")
             request = youtube.commentThreads().list(part="snippet,replies", videoId=video_id, maxResults=100)
+            page_count = 0
             while request is not None:
                 response = request.execute()
-                for item in response.get('items', []):
+                page_count += 1
+                items = response.get('items', [])
+                print(f"📄 페이지 {page_count}: {len(items)}개 스레드")
+                
+                for item in items:
                     try:
                         top = item['snippet']['topLevelComment']['snippet']
                         text = top.get('textDisplay', top.get('textOriginal',''))
                         if isinstance(text, str): all_comments.append(text)
-                    except Exception:
+                    except Exception as e:
+                        print(f"⚠️  최상위 댓글 파싱 실패: {e}")
                         pass
                     for r in item.get('replies', {}).get('comments', []):
                         try:
                             rt = r.get('snippet', {}).get('textDisplay', '')
                             if isinstance(rt, str): all_comments.append(rt)
-                        except Exception:
+                        except Exception as e:
+                            print(f"⚠️  답글 파싱 실패: {e}")
                             pass
                 request = youtube.commentThreads().list_next(request, response)
-        except Exception:
+            
+            print(f"✅ 총 {len(all_comments)}개 댓글 수집 완료")
+        except Exception as e:
+            print(f"❌ 댓글 수집 중 오류: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
             return []
         return all_comments
 
