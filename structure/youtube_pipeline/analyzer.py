@@ -88,12 +88,6 @@ def extract_features(text: str) -> Dict[str, Any]:
     }
 
 class Analyzer:
-<<<<<<< Updated upstream
-    """LLM 없이 키워드/프레임 기반으로만 좌·우 분류"""
-
-    def __init__(self):
-        pass
-=======
     """댓글 분석 및 정치 성향 분류 Analyzer (OpenAI API 사용)"""
 
     def __init__(self):
@@ -113,7 +107,6 @@ class Analyzer:
             except ImportError:
                 print("⚠️ openai 패키지가 설치되지 않았습니다. 'pip install openai' 실행 필요")
                 self.api_key = None
->>>>>>> Stashed changes
 
     @staticmethod
     def calculate_similarity(text1: str, text2: str) -> float:
@@ -130,43 +123,6 @@ class Analyzer:
         objs.sort(key=lambda x: x["similarity_score"], reverse=True)
         return objs[:max_comments]
 
-<<<<<<< Updated upstream
-    def analyze_comments(self, comments: List[str], summary_sentences: List[str], top_k: int = 5) -> Dict[str, Any]:
-        """
-        summaries 기반으로 댓글 분석 후 극좌/극우 댓글 각 top_k개만 추출
-        
-        Args:
-            comments: 전체 댓글 리스트
-            summary_sentences: 영상 요약 문장 리스트
-            top_k: 좌파/우파 각각 추출할 극단 댓글 개수 (기본 5개)
-        """
-        filtered = self.filter_comments_by_similarity(comments, summary_sentences)
-        if not filtered:
-            return {'comments': [], 'statistics': {}, 'left_comments': [], 'right_comments': []}
-
-        # 모든 댓글 분석
-        analyzed = []
-        for obj in filtered:
-            res = extract_features(obj["text"])
-            obj["political_orientation"] = res["label"]
-            obj["classification_confidence"] = res["confidence"]
-            obj["hits"] = res["hits"]
-            obj["left_score"] = res["left_score"]
-            obj["right_score"] = res["right_score"]
-            obj["extremity_score"] = res["extremity_score"]
-            analyzed.append(obj)
-
-        # 확신도 0.55 미만 제외
-        analyzed = [c for c in analyzed if c["classification_confidence"] >= 0.55]
-
-        # 좌파/우파 분리
-        left_comments = [c for c in analyzed if c["political_orientation"] == "좌파"]
-        right_comments = [c for c in analyzed if c["political_orientation"] == "우파"]
-
-        # 극단성 점수 기준으로 정렬 (높은 순)
-        left_comments.sort(key=lambda x: x["extremity_score"], reverse=True)
-        right_comments.sort(key=lambda x: x["extremity_score"], reverse=True)
-=======
     def _classify_with_openai(self, comment_text: str) -> Dict[str, Any]:
         """OpenAI API를 사용하여 댓글 분류"""
         if not self.openai_client:
@@ -288,7 +244,6 @@ class Analyzer:
         # 극단성 점수 기준으로 정렬 (높은 순)
         left_comments.sort(key=lambda x: x.get('extremity_score', 0), reverse=True)
         right_comments.sort(key=lambda x: x.get('extremity_score', 0), reverse=True)
->>>>>>> Stashed changes
 
         # 상위 top_k개만 선택
         top_left = left_comments[:top_k]
@@ -302,16 +257,9 @@ class Analyzer:
         stats = {k: {"count": v, "percentage": round(v/total*100, 1)} for k, v in stats.items()}
 
         return {
-<<<<<<< Updated upstream
-            "comments": final,
-            "statistics": stats,
-            "left_comments": [c["text"] for c in top_left],
-            "right_comments": [c["text"] for c in top_right],
-=======
             'comments': final,
             'statistics': final_stats,
             'left_comments': [c['text'] for c in top_left],
             'right_comments': [c['text'] for c in top_right],
             'similarity_stats': sim_stats
->>>>>>> Stashed changes
         }
