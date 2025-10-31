@@ -29,10 +29,22 @@ class YouTubeFullPipeline:
             self.base_dir = Path.cwd()
         else:
             self.base_dir = Path(base_dir)
-        self.audio = AudioDownloader(self.base_dir)
-        self.transcriber = Transcriber(self.base_dir)
-        self.summarizer = Summarizer(self.base_dir)
-        self.collector = CommentCollector(self.base_dir)
+        
+        # structure/data/ 경로 설정
+        # base_dir이 structure 폴더면 그 안의 data, 아니면 base_dir/data
+        if self.base_dir.name == "structure":
+            self.data_dir = self.base_dir / "data"
+        elif (self.base_dir / "data").exists():
+            self.data_dir = self.base_dir / "data"
+        else:
+            # base_dir이 이미 data 폴더이거나 다른 경로인 경우
+            self.data_dir = self.base_dir if self.base_dir.name == "data" else self.base_dir / "data"
+        
+        # 모든 컴포넌트에 data_dir 전달
+        self.audio = AudioDownloader(self.data_dir)
+        self.transcriber = Transcriber(self.data_dir)
+        self.summarizer = Summarizer(self.data_dir)
+        self.collector = CommentCollector(self.data_dir)
         self.analyzer = Analyzer(ForceReclassifier())
         self.saver = ResultsSaver(self.data_dir)
 
