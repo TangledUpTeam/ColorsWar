@@ -86,8 +86,25 @@ class CommentPersonaEngine:
         print(f"🤖 {side_name} 페르소나 생성 시작... (댓글 {len(comments)}개)")
         print(f"{'='*60}\n")
 
+<<<<<<< Updated upstream
         prompt = f"""다음은 {side_name} 성향의 정치 뉴스 댓글입니다.
 말투, 감정, 가치관을 분석해 JSON으로 요약하세요.
+=======
+        # Structure에서 이미 5개를 전달받았으면 그대로 사용, 아니면 랜덤 샘플링
+        if len(comments) == 5:
+            sampled_comments = comments
+            print(f"📝 Structure에서 전달받은 댓글 5개 사용:")
+        else:
+            sampled_comments = random.sample(comments, min(5, len(comments)))
+            print(f"📝 랜덤 샘플링된 댓글 {len(sampled_comments)}개:")
+        
+        for i, comment in enumerate(sampled_comments, 1):
+            print(f"  {i}. {comment[:50]}...")
+
+        # OpenAI 프롬프트 구성
+        prompt = f"""다음은 {side_name} 성향의 유튜브 정치 댓글 5개입니다.
+이 댓글들의 말투, 감정, 가치관, 논조를 분석하여 페르소나를 생성하세요.
+>>>>>>> Stashed changes
 
 댓글:
 {chr(10).join(comments[:15])}
