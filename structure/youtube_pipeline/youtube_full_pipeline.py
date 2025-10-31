@@ -80,8 +80,27 @@ class YouTubeFullPipeline:
         comments = self.collector.collect_comments(vid)
         print(f"💬 수집된 댓글 수: {len(comments) if comments else 0}")
         if not comments:
-            print("❌ 댓글을 찾을 수 없습니다")
-            return {}
+            print("⚠️  댓글을 찾을 수 없습니다. 요약만 반환합니다.")
+            # 댓글 없이도 기본 결과 반환
+            return {
+                'video_id': vid,
+                'summary': {
+                    'structured': structured,
+                    'sentences': summary_sentences,
+                    'keywords': keywords
+                },
+                'analysis': {
+                    'statistics': {
+                        'total': 0,
+                        'left_count': 0,
+                        'right_count': 0
+                    },
+                    'left_comments': [],
+                    'right_comments': []
+                },
+                'debate': [],
+                'message': '댓글 수집 실패 - 요약만 생성됨'
+            }
         
         # 6단계: 댓글 분석
         print("🔍 댓글 분석 중...")
