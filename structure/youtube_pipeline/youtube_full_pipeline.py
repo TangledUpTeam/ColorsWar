@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 
 # 가볍게 모듈화된 컴포넌트들을 임포트
 from .audio import AudioDownloader
@@ -8,19 +9,6 @@ from .summarizer import Summarizer
 from .comments import CommentCollector
 from .analyzer import Analyzer
 from .saver import ResultsSaver
-
-# 기존 외부 의존 모듈(재분류기, 페르소나)은 기존 위치에서 import 시도
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-try:
-    from reclassifier import ForceReclassifier  # type: ignore
-except Exception:
-    # fallback mock if not available
-    class ForceReclassifier:
-        def batch_reclassify(self, comments):
-            return comments
 
 class YouTubeFullPipeline:
     def __init__(self, base_dir: Path = None):
@@ -45,7 +33,7 @@ class YouTubeFullPipeline:
         self.transcriber = Transcriber(self.data_dir)
         self.summarizer = Summarizer(self.data_dir)
         self.collector = CommentCollector(self.data_dir)
-        self.analyzer = Analyzer(ForceReclassifier())
+        self.analyzer = Analyzer()
         self.saver = ResultsSaver(self.data_dir)
 
     def extract_video_id(self, url_or_id: str) -> str:
