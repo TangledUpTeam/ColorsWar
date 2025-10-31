@@ -349,7 +349,7 @@ async function generatePersona() {
                 
                 const speakerDiv = document.createElement('div');
                 speakerDiv.className = 'debate-speaker';
-                speakerDiv.textContent = message.side === 'left' ? '👈 A 의견' : '👉 B 의견';
+                speakerDiv.textContent = message.side === 'left' ? '👈 의견 A' : '👉 의견 B';
                 
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'debate-content';
@@ -379,6 +379,10 @@ async function generatePersona() {
         
         console.log('✅ 토론 완료!');
         
+        // 토론 완료 후 자동으로 주요 댓글 + 팩트체크 포인트 표시
+        console.log('📋 자동으로 주요 댓글 및 팩트체크 포인트 추출 중...');
+        await extractClaimsAfterDebate();
+        
     } catch (error) {
         console.error('❌ 오류:', error);
         alert(`오류 발생: ${error.message}`);
@@ -387,32 +391,66 @@ async function generatePersona() {
     }
 }
 
+/**
+ * 토론 완료 후 자동으로 주요 댓글 + 팩트체크 포인트 추출
+ */
+async function extractClaimsAfterDebate() {
+    if (!currentVideoId) {
+        console.warn('⚠️ 비디오 ID가 없어서 주장 추출 건너뜀');
+        return;
+    }
+    
+    try {
+        // Step 3 팩트체크 섹션 펼치기
+        const step3 = document.getElementById('step3');
+        if (step3 && step3.classList.contains('collapsed')) {
+            toggleStep('step3');
+        }
+        
+        // 1. 주요 댓글 5개 추출
+        const commentsResponse = await fetch(`${API_BASE}/api/claim-extraction/extract`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video_id: currentVideoId, top_k: 5 })
+        });
+        
+        const commentsData = await commentsResponse.json();
+        
+        // 2. 팩트체크 포인트 0~3개 추출
+        const factcheckResponse = await fetch(`${API_BASE}/api/claim-extraction/extract-factcheck-points`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ video_id: currentVideoId, top_k: 3 })
+        });
+        
+        const factcheckData = await factcheckResponse.json();
+        
+        console.log('💬 주요 댓글:', commentsData);
+        console.log('🔍 팩트체크 포인트:', factcheckData);
+        
+        // 세 섹션 표시
+        displayMainComments(commentsData.claims || []);
+        displayFactcheckPoints(factcheckData.claims || []);
+        
+        // 수동 입력 섹션도 표시
+        const manualFactcheck = document.getElementById('manual-factcheck');
+        if (manualFactcheck) {
+            manualFactcheck.style.display = 'block';
+        }
+        
+        // 팩트체크 섹션으로 스크롤
+        setTimeout(() => {
+            document.getElementById('step3')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 500);
+        
+    } catch (error) {
+        console.error('주장 추출 오류:', error);
+    }
+}
+
 function formatPersonaResult(data) {
-    let text = '';
-    
-    text += `✅ 페르소나 생성 완료!\n\n`;
-    
-    if (data.left_persona) {
-        text += `👈 좌파 페르소나:\n`;
-        const lp = data.left_persona;
-        text += `  📝 요약: ${lp.summary || 'N/A'}\n`;
-        text += `  💎 가치관: ${(lp.values || []).join(', ')}\n`;
-        text += `  🗣️ 말투: ${(lp.tone || []).join(', ')}\n`;
-        text += `  😊 감정: ${lp.emotion || 'N/A'}\n`;
-        text += `  🔑 키워드: ${(lp.keywords || []).slice(0, 5).join(', ')}\n\n`;
-    }
-    
-    if (data.right_persona) {
-        text += `👉 우파 페르소나:\n`;
-        const rp = data.right_persona;
-        text += `  📝 요약: ${rp.summary || 'N/A'}\n`;
-        text += `  💎 가치관: ${(rp.values || []).join(', ')}\n`;
-        text += `  🗣️ 말투: ${(rp.tone || []).join(', ')}\n`;
-        text += `  😊 감정: ${rp.emotion || 'N/A'}\n`;
-        text += `  🔑 키워드: ${(rp.keywords || []).slice(0, 5).join(', ')}\n\n`;
-    }
-    
-    return text;
+    // 페르소나 세부 정보는 숨김 (사용자에게 보여줄 필요 없음)
+    return `✅ 페르소나 생성 완료! 곧 토론이 시작됩니다...\n`;
 }
 
 // ==================== 주장 추출 ====================
@@ -426,9 +464,24 @@ async function extractClaims() {
     }
     
     try {
-        console.log('📋 주장 추출 요청:', currentVideoId);
+        console.log('📋 주요 댓글 + 팩트체크 포인트 추출 요청:', currentVideoId);
         
-        const response = await fetch(`${API_BASE}/api/claim-extraction/extract`, {
+        // 1. 주요 댓글 5개 추출
+        const commentsResponse = await fetch(`${API_BASE}/api/claim-extraction/extract`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                video_id: currentVideoId,
+                top_k: 5  // 주요 댓글 5개
+            })
+        });
+        
+        const commentsData = await commentsResponse.json();
+        
+        // 2. 팩트체크 포인트 0~3개 추출
+        const factcheckResponse = await fetch(`${API_BASE}/api/claim-extraction/extract-factcheck-points`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -439,58 +492,90 @@ async function extractClaims() {
             })
         });
         
-        const data = await response.json();
+        const factcheckData = await factcheckResponse.json();
         
-        console.log('📋 주장 추출 응답:', data);
+        console.log('💬 주요 댓글:', commentsData);
+        console.log('🔍 팩트체크 포인트:', factcheckData);
         
-        if (!response.ok) {
-            throw new Error(data.detail || '주장 추출 실패');
-        }
-        
-        if (!data.success || !data.claims || data.claims.length === 0) {
-            alert('팩트체크 가능한 주장을 찾을 수 없습니다.');
-            return;
-        }
-        
-        // 추출된 주장 표시
-        displayExtractedClaims(data.claims);
+        // 두 섹션 표시
+        displayMainComments(commentsData.claims || []);
+        displayFactcheckPoints(factcheckData.claims || []);
         
     } catch (error) {
-        console.error('주장 추출 오류:', error);
-        alert(`주장 추출 실패: ${error.message}`);
+        console.error('추출 오류:', error);
+        alert(`추출 실패: ${error.message}`);
     }
 }
 
-function displayExtractedClaims(claims) {
-    const container = document.getElementById('extracted-claims');
-    const list = document.getElementById('claims-list');
+/**
+ * 주요 댓글 5개 표시 (읽기 전용)
+ */
+function displayMainComments(comments) {
+    const container = document.getElementById('main-comments');
+    const list = document.getElementById('main-comments-list');
+    
+    if (!comments || comments.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
     
     // 리스트 초기화
     list.innerHTML = '';
     
-    // 각 주장을 클릭 가능한 항목으로 표시
-    claims.forEach((claim, index) => {
+    // 각 댓글을 읽기 전용으로 표시
+    comments.forEach((comment, index) => {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        item.innerHTML = `
+            <span class="claim-text">${comment.claim}</span>
+            <span class="claim-score-box">유형매칭도<br>${(comment.score * 100).toFixed(0)}/100</span>
+        `;
+        
+        list.appendChild(item);
+    });
+    
+    // 컨테이너 표시
+    container.style.display = 'block';
+}
+
+/**
+ * 팩트체크 포인트 0~3개 표시 (클릭 시 바로 팩트체크)
+ */
+function displayFactcheckPoints(points) {
+    const container = document.getElementById('factcheck-points');
+    const list = document.getElementById('factcheck-points-list');
+    
+    if (!points || points.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    // 리스트 초기화
+    list.innerHTML = '';
+    
+    // 각 포인트를 클릭 가능한 항목으로 표시
+    points.forEach((point, index) => {
         const item = document.createElement('div');
         item.className = 'claim-item';
         item.innerHTML = `
-            <span>${claim.claim}</span>
-            <span class="claim-score">${(claim.score * 100).toFixed(0)}점</span>
+            <span class="claim-text">${point.claim}</span>
+            <span class="claim-score-box">관련도<br>${(point.score * 100).toFixed(0)}/100</span>
         `;
         
-        // 클릭 시 입력창에 자동 입력 + 백엔드에서 키워드 추출 후 팩트체크
+        // 클릭 시 바로 팩트체크 실행
         item.onclick = async () => {
-            // 원본 댓글 표시
-            document.getElementById('factcheck-claim').value = claim.claim;
-            
             // 선택된 항목 하이라이트
             document.querySelectorAll('.claim-item').forEach(el => el.classList.remove('selected'));
             item.classList.add('selected');
             
-            // 팩트체크 결과 창으로 스크롤
-            document.getElementById('factcheck-claim').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // 입력창에도 표시
+            document.getElementById('factcheck-claim').value = point.claim;
             
-            // 자동으로 팩트체크 실행 (백엔드에서 키워드 추출)
-            await runFactcheckWithKeywordExtraction(claim.claim);
+            // 팩트체크 결과 창으로 스크롤
+            document.getElementById('factcheck-result').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 바로 팩트체크 실행 (키워드 추출 없이 그대로)
+            await runFactcheck();
         };
         
         list.appendChild(item);
