@@ -20,13 +20,13 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 800px;
             margin: 0 auto;
         }
         
         .header {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            padding: 40px;
+            padding: 30px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             margin-bottom: 30px;
@@ -35,121 +35,135 @@
         }
         
         .title {
-            font-size: 2.8rem;
+            font-size: 2.2rem;
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
         
         .subtitle {
             color: #5a6c7d;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
+            font-size: 1rem;
             font-weight: 400;
         }
         
-        .api-link {
-            display: inline-block;
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
-            margin: 5px;
-            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-        }
-        
-        .api-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-        }
-        
-        .modules {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 24px;
-            margin-top: 30px;
-        }
-        
-        .module-card {
+        /* Step 1: YouTube 분석 */
+        .step-card {
             background: #ffffff;
             border-radius: 12px;
             padding: 32px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
         }
         
-        .module-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            border-color: rgba(52, 152, 219, 0.2);
+        .step-card.collapsed {
+            padding: 16px 32px;
         }
         
-        .module-header {
+        .step-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
             padding-bottom: 16px;
             border-bottom: 2px solid #f0f3f5;
         }
         
-        .module-icon {
-            font-size: 2.5rem;
-            margin-right: 15px;
-            filter: grayscale(20%);
+        .step-card.collapsed .step-header {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
         }
         
-        .module-title {
-            font-size: 1.6rem;
+        .step-title {
+            font-size: 1.5rem;
             color: #2c3e50;
             font-weight: 600;
-            letter-spacing: -0.3px;
-        }
-        
-        .module-description {
-            color: #5a6c7d;
-            margin-bottom: 20px;
-            line-height: 1.7;
-            font-size: 0.95rem;
-        }
-        
-        .feature-list {
-            list-style: none;
-            margin-bottom: 20px;
-        }
-        
-        .feature-list li {
-            padding: 10px 0;
-            color: #5a6c7d;
             display: flex;
             align-items: center;
-            font-size: 0.95rem;
+            gap: 10px;
         }
         
-        .feature-list li:before {
-            content: "✓";
-            color: #27ae60;
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-right: 12px;
-            background: rgba(39, 174, 96, 0.1);
-            width: 24px;
-            height: 24px;
+        .step-number {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        
+        .toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #5a6c7d;
+            padding: 8px;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+        
+        .toggle-btn:hover {
+            background: #f0f3f5;
+            color: #2c3e50;
+        }
+        
+        .step-content {
+            display: block;
+        }
+        
+        .step-card.collapsed .step-content {
+            display: none;
+        }
+        
+        .features {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .features h4 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features li {
+            color: #5a6c7d;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.9rem;
+        }
+        
+        .features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
         }
         
         .input-group {
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
         
         .input-group label {
@@ -163,12 +177,11 @@
         .input-group input,
         .input-group textarea {
             width: 100%;
-            padding: 12px 16px;
-            border: 1.5px solid #d1d8e0;
+            padding: 14px 16px;
+            border: 2px solid #e1e8ed;
             border-radius: 8px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             transition: all 0.3s;
-            background: #ffffff;
             font-family: inherit;
         }
         
@@ -179,85 +192,58 @@
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
         
+        .input-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
         .btn {
-            padding: 14px 24px;
+            width: 100%;
+            padding: 16px;
             background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 100%;
-            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.25);
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
         }
         
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
-            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+            box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
         
         .btn:disabled {
-            background: #95a5a6;
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
         
-        .result-box {
-            margin-top: 20px;
-            padding: 24px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            border-radius: 10px;
-            display: none;
-            border: 1px solid #e1e8ed;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        .btn-secondary {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            margin-top: 16px;
         }
         
-        .result-box.show {
-            display: block;
-            animation: fadeIn 0.3s ease-in;
+        .btn-secondary:hover {
+            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
         }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .result-title {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 12px;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-        }
-        
-        .result-title:before {
-            content: "📊";
-            margin-right: 8px;
-        }
-        
-        .result-content {
-            color: #5a6c7d;
-            line-height: 1.8;
-            white-space: pre-wrap;
-            font-size: 0.95rem;
-            font-family: 'Courier New', monospace;
-            background: #ffffff;
-            padding: 16px;
-            border-radius: 6px;
-            border: 1px solid #e1e8ed;
-        }
-        
+        /* 로딩 애니메이션 */
         .loading {
             display: none;
             text-align: center;
-            padding: 24px;
-            color: #3498db;
-            font-weight: 500;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
         }
         
         .loading.show {
@@ -265,8 +251,8 @@
         }
         
         .spinner {
-            border: 3px solid #e1e8ed;
-            border-top: 3px solid #3498db;
+            border: 4px solid #e1e8ed;
+            border-top: 4px solid #3498db;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -279,19 +265,163 @@
             100% { transform: rotate(360deg); }
         }
         
-        .footer {
-            text-align: center;
-            color: #7f8c8d;
-            margin-top: 50px;
-            padding: 30px 20px;
-            font-size: 0.9rem;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
+        .loading-text {
+            color: #5a6c7d;
+            font-size: 0.95rem;
         }
         
-        .footer p {
-            margin: 5px 0;
+        /* 결과 표시 */
+        .result-box {
+            display: none;
+            background: #f8f9fa;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result-box.show {
+            display: block;
+        }
+        
+        .result-box h4 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .result-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            font-family: inherit;
+        }
+        
+        /* 실시간 로그 */
+        .live-log {
+            display: none;
+            background: #2c3e50;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #ecf0f1;
+        }
+        
+        .live-log.show {
+            display: block;
+        }
+        
+        .live-log .log-line {
+            margin-bottom: 4px;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .live-log .log-success {
+            color: #2ecc71;
+        }
+        
+        .live-log .log-error {
+            color: #e74c3c;
+        }
+        
+        .live-log .log-info {
+            color: #3498db;
+        }
+        
+        .live-log .log-warning {
+            color: #f39c12;
+        }
+        
+        /* 토론 결과 */
+        .debate-container {
+            margin-top: 20px;
+        }
+        
+        .debate-message {
+            background: #ffffff;
+            border-left: 4px solid #3498db;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .debate-message.side-a {
+            border-left-color: #3498db;
+        }
+        
+        .debate-message.side-b {
+            border-left-color: #27ae60;
+        }
+        
+        .debate-speaker {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .debate-content {
+            color: #5a6c7d;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+        
+        /* 팩트체크 */
+        .factcheck-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .container {
+                max-width: 100%;
+            }
+            
+            .title {
+                font-size: 1.8rem;
+            }
+            
+            .step-card {
+                padding: 24px;
+            }
+            
+            .step-card.collapsed {
+                padding: 12px 24px;
+            }
+            
+            .step-title {
+                font-size: 1.2rem;
+            }
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #5a6c7d;
+            font-size: 0.9rem;
+            margin-top: 40px;
+            border-top: 1px solid rgba(0,0,0,0.06);
         }
     </style>
 </head>
@@ -300,120 +430,158 @@
         <!-- 헤더 -->
         <div class="header">
             <h1 class="title">🎭 ColorWar</h1>
-            <p class="subtitle">YouTube 정치 댓글 분석 → AI 페르소나 생성 → 팩트체크 시스템</p>
-            
+            <p class="subtitle">정치 댓글 분석 · AI 페르소나 생성 · 팩트체크</p>
         </div>
-        
-        <!-- 모듈 카드 -->
-        <div class="modules">
-            <!-- 1. 영상 주제 추출 -->
-            <div class="module-card">
-                <div class="module-header">
-                    <div class="module-icon">📹</div>
-                    <div class="module-title">영상 주제 추출</div>
+
+        <!-- Step 1: 영상 주제 추출 -->
+        <div class="step-card" id="step1">
+            <div class="step-header">
+                <div class="step-title">
+                    <span class="step-number">1</span>
+                    <span>영상 주제 추출</span>
                 </div>
-                <p class="module-description">
-                    YouTube 영상의 댓글을 수집하고 분석합니다.
-                </p>
-                <ul class="feature-list">
-                    <li>댓글 자동 수집</li>
-                    <li>대립 의견 분류</li>
-                    <li>주제 추출 (BERTopic)</li>
-                    <li>요약 생성</li>
-                </ul>
-                
+                <button class="toggle-btn" onclick="toggleStep('step1')" title="접기/펼치기">
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
+            
+            <div class="step-content">
+                <div class="features">
+                    <h4>📋 자동 처리</h4>
+                    <ul>
+                        <li>댓글 자동 수집</li>
+                        <li>대립 의견 분류</li>
+                        <li>주제 추출 및 요약 생성</li>
+                    </ul>
+                </div>
+
                 <div class="input-group">
-                    <label>YouTube URL</label>
-                    <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=...">
+                    <label for="youtube-url">🔗 YouTube URL</label>
+                    <input 
+                        type="text" 
+                        id="youtube-url" 
+                        placeholder="예: https://www.youtube.com/watch?v=..."
+                    />
                 </div>
-                
-                <button class="btn" onclick="runYoutubePipeline()">🧭 주제 검출</button>
-                
+
+                <button class="btn" onclick="runYoutubePipeline()">
+                    🧭 주제 검출
+                </button>
+
                 <div class="loading" id="youtube-loading">
                     <div class="spinner"></div>
-                    <div>처리 중... (최대 5분 소요)</div>
+                    <p class="loading-text">분석 중...</p>
                 </div>
-                
+
+                <div class="live-log" id="youtube-log">
+                    <div class="log-line log-info">🚀 분석 시작...</div>
+                </div>
+
                 <div class="result-box" id="youtube-result">
-                    <div class="result-title">📊 분석 결과</div>
-                    <div class="result-content" id="youtube-result-content"></div>
-                </div>
-            </div>
-            
-            <!-- 2. AI 페르소나 & 토론 -->
-            <div class="module-card">
-                <div class="module-header">
-                    <div class="module-icon">🤖</div>
-                    <div class="module-title">AI 페르소나</div>
-                </div>
-                <p class="module-description">
-                    수집된 댓글로 AI 페르소나를 생성하고 토론을 시뮬레이션합니다.
-                </p>
-                <ul class="feature-list">
-                    <li>대립 의견 페르소나 자동 생성</li>
-                    <li>말투 & 감정 학습</li>
-                    <li>AI 토론 시뮬레이션</li>
-                    <li>실시간 대화 생성</li>
-                </ul>
-                
-                <div class="input-group">
-                    <label>A 의견 댓글 (5개 이상, 줄바꿈으로 구분)</label>
-                    <textarea id="left-comments" rows="4" placeholder="A 의견 댓글 1&#10;A 의견 댓글 2&#10;..."></textarea>
-                </div>
-                
-                <div class="input-group">
-                    <label>B 의견 댓글 (5개 이상, 줄바꿈으로 구분)</label>
-                    <textarea id="right-comments" rows="4" placeholder="B 의견 댓글 1&#10;B 의견 댓글 2&#10;..."></textarea>
-                </div>
-                
-                <button class="btn" onclick="generatePersona()">⚖️ 페르소나 생성 & 토론 시작</button>
-                
-                <div class="loading" id="persona-loading">
-                    <div class="spinner"></div>
-                    <div>페르소나 생성 중...</div>
-                </div>
-                
-                <div class="result-box" id="persona-result">
-                    <div class="result-title">🎭 페르소나 정보</div>
-                    <div class="result-content" id="persona-result-content"></div>
-                </div>
-            </div>
-            
-            <!-- 3. 팩트체크 -->
-            <div class="module-card">
-                <div class="module-header">
-                    <div class="module-icon">📰</div>
-                    <div class="module-title">팩트체크</div>
-                </div>
-                <p class="module-description">
-                    뉴스 검색을 통해 주장의 진위를 검증합니다.
-                </p>
-                <ul class="feature-list">
-                    <li>네이버 + 해외 뉴스 검색</li>
-                    <li>증거 기반 판정</li>
-                    <li>신뢰도 평가 (10점 척도)</li>
-                    <li>True/False/Uncertain</li>
-                </ul>
-                
-                <div class="input-group">
-                    <label>검증할 주장</label>
-                    <input type="text" id="factcheck-claim" placeholder="예: 윤석열 대통령 탄핵">
-                </div>
-                
-                <button class="btn" onclick="runFactcheck()">🔍 팩트체크 실행</button>
-                
-                <div class="loading" id="factcheck-loading">
-                    <div class="spinner"></div>
-                    <div>검증 중...</div>
-                </div>
-                
-                <div class="result-box" id="factcheck-result">
-                    <div class="result-title">📊 검증 결과</div>
-                    <div class="result-content" id="factcheck-result-content"></div>
+                    <h4>📊 분석 결과</h4>
+                    <pre id="youtube-result-content"></pre>
                 </div>
             </div>
         </div>
-        
+
+        <!-- Step 2: 페르소나 생성 & 토론 -->
+        <div class="step-card collapsed" id="step2">
+            <div class="step-header">
+                <div class="step-title">
+                    <span class="step-number">2</span>
+                    <span>페르소나 생성 & 토론</span>
+                </div>
+                <button class="toggle-btn" onclick="toggleStep('step2')" title="접기/펼치기">
+                    <span class="toggle-icon">▶</span>
+                </button>
+            </div>
+            
+            <div class="step-content">
+                <div class="features">
+                    <h4>🎭 AI 기능</h4>
+                    <ul>
+                        <li>대립 의견 페르소나 자동 생성</li>
+                        <li>AI 토론 시뮬레이션</li>
+                        <li>실시간 토론 진행 표시</li>
+                    </ul>
+                </div>
+
+                <div class="input-group">
+                    <label for="left-comments">📝 A 의견 댓글 (한 줄에 하나씩)</label>
+                    <textarea 
+                        id="left-comments" 
+                        placeholder="YouTube 분석 후 자동으로 입력됩니다"
+                    ></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="right-comments">📝 B 의견 댓글 (한 줄에 하나씩)</label>
+                    <textarea 
+                        id="right-comments" 
+                        placeholder="YouTube 분석 후 자동으로 입력됩니다"
+                    ></textarea>
+                </div>
+
+                <button class="btn btn-secondary" onclick="generatePersona()">
+                    ⚖️ 페르소나 생성 & 토론 시작
+                </button>
+
+                <div class="loading" id="persona-loading">
+                    <div class="spinner"></div>
+                    <p class="loading-text">페르소나 생성 중...</p>
+                </div>
+
+                <div class="result-box" id="persona-result">
+                    <h4>🎭 페르소나 정보</h4>
+                    <pre id="persona-result-content"></pre>
+                </div>
+
+                <div class="debate-container" id="debate-container"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: 팩트체크 -->
+        <div class="factcheck-card">
+            <div class="step-header">
+                <div class="step-title">
+                    <span class="step-number">3</span>
+                    <span>팩트체크</span>
+                </div>
+            </div>
+
+            <div class="features">
+                <h4>🔍 검증 기능</h4>
+                <ul>
+                    <li>주장 사실 여부 검증</li>
+                    <li>증거 문서 검색 (BM25 + Sentence Transformers)</li>
+                    <li>신뢰도 점수 계산</li>
+                </ul>
+            </div>
+
+            <div class="input-group">
+                <label for="factcheck-claim">💬 검증할 주장</label>
+                <input 
+                    type="text" 
+                    id="factcheck-claim" 
+                    placeholder="예: 비트코인 가격이 급등했다"
+                />
+            </div>
+
+            <button class="btn" onclick="runFactcheck()">
+                🔎 팩트체크 실행
+            </button>
+
+            <div class="loading" id="factcheck-loading">
+                <div class="spinner"></div>
+                <p class="loading-text">검증 중...</p>
+            </div>
+
+            <div class="result-box" id="factcheck-result">
+                <h4>✅ 검증 결과</h4>
+                <pre id="factcheck-result-content"></pre>
+            </div>
+        </div>
+
         <!-- 푸터 -->
         <div class="footer">
             <p>🎭 ColorWar - 정치 댓글 분석 시스템 v1.0.0</p>
@@ -421,7 +589,6 @@
         </div>
     </div>
     
-    <script src="/static/app.js?v=6"></script>
+    <script src="/static/app.js?v=11"></script>
 </body>
 </html>
-

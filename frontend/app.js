@@ -2,6 +2,35 @@
 
 const API_BASE = window.location.origin;
 
+// ==================== UI 유틸리티 ====================
+function toggleStep(stepId) {
+    const step = document.getElementById(stepId);
+    const icon = step.querySelector('.toggle-icon');
+    
+    step.classList.toggle('collapsed');
+    icon.textContent = step.classList.contains('collapsed') ? '▶' : '▼';
+}
+
+function addLog(logId, message, type = 'info') {
+    const logEl = document.getElementById(logId);
+    if (!logEl) return;
+    
+    const logLine = document.createElement('div');
+    logLine.className = `log-line log-${type}`;
+    logLine.textContent = message;
+    logEl.appendChild(logLine);
+    
+    // 자동 스크롤
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+function clearLog(logId) {
+    const logEl = document.getElementById(logId);
+    if (logEl) {
+        logEl.innerHTML = '<div class="log-line log-info">🚀 분석 시작...</div>';
+    }
+}
+
 // ==================== YouTube 파이프라인 ====================
 function normalizeYouTubeUrl(inputUrl) {
     try {
@@ -24,7 +53,6 @@ function normalizeYouTubeUrl(inputUrl) {
 
 async function runYoutubePipeline() {
     const rawUrl = document.getElementById('youtube-url').value;
-    const topic = document.getElementById('youtube-topic').value;
     
     if (!rawUrl) {
         alert('YouTube URL을 입력해주세요');
@@ -33,12 +61,25 @@ async function runYoutubePipeline() {
     const url = normalizeYouTubeUrl(rawUrl);
     
     const loading = document.getElementById('youtube-loading');
+    const logBox = document.getElementById('youtube-log');
     const result = document.getElementById('youtube-result');
     const resultContent = document.getElementById('youtube-result-content');
     
     try {
+        // UI 초기화
         loading.classList.add('show');
+        logBox.classList.add('show');
         result.classList.remove('show');
+        clearLog('youtube-log');
+        
+        // 로그 시작
+        addLog('youtube-log', '📹 비디오 ID 추출 중...', 'info');
+        addLog('youtube-log', '🎵 오디오 다운로드 중...', 'info');
+        
+        setTimeout(() => addLog('youtube-log', '🎤 음성 전사 중... (1~2분 소요)', 'info'), 500);
+        setTimeout(() => addLog('youtube-log', '📝 요약 생성 중...', 'info'), 1000);
+        setTimeout(() => addLog('youtube-log', '💬 댓글 수집 중...', 'info'), 1500);
+        setTimeout(() => addLog('youtube-log', '🔍 대립 의견 분류 중...', 'info'), 2000);
         
         const response = await fetch(`${API_BASE}/api/structure/youtube-pipeline`, {
             method: 'POST',
@@ -47,7 +88,7 @@ async function runYoutubePipeline() {
             },
             body: JSON.stringify({
                 youtube_url: url,
-                topic: topic,
+                topic: "영상 주제",
                 rounds: 5
             })
         });
@@ -55,8 +96,11 @@ async function runYoutubePipeline() {
         const data = await response.json();
         
         if (!response.ok) {
+            addLog('youtube-log', `❌ 오류: ${data.detail || '처리 실패'}`, 'error');
             throw new Error(data.detail || '처리 실패');
         }
+        
+        addLog('youtube-log', '✅ 분석 완료!', 'success');
         
         // 결과 표시
         resultContent.textContent = formatYoutubeResult(data);
@@ -64,6 +108,7 @@ async function runYoutubePipeline() {
         
     } catch (error) {
         alert(`오류 발생: ${error.message}`);
+        addLog('youtube-log', `❌ ${error.message}`, 'error');
     } finally {
         loading.classList.remove('show');
     }
@@ -90,7 +135,12 @@ function formatYoutubeResult(data) {
     
     if (data.analysis && data.analysis.statistics) {
         const stats = data.analysis.statistics;
-        const total = stats.total || 0;
+        
+        // 백엔드 응답 구조: {'좌파': {count: N, percentage: X}, '우파': {count: M, percentage: Y}}
+        const leftCount = stats['좌파']?.count || 0;
+        const rightCount = stats['우파']?.count || 0;
+        const undeterminedCount = stats['판단불가']?.count || 0;
+        const total = leftCount + rightCount + undeterminedCount;
         
         if (total === 0) {
             text += `⚠️  댓글 수집 실패\n`;
@@ -100,14 +150,32 @@ function formatYoutubeResult(data) {
             text += `💡 다른 공개 영상으로 시도해보세요!\n`;
         } else {
             text += `📊 댓글 분석:\n`;
-            text += `  좌파: ${stats.left_count || 0}개\n`;
-            text += `  우파: ${stats.right_count || 0}개\n`;
+            text += `  A 의견: ${leftCount}개 (${stats['좌파']?.percentage || 0}%)\n`;
+            text += `  B 의견: ${rightCount}개 (${stats['우파']?.percentage || 0}%)\n`;
+            text += `  판단불가: ${undeterminedCount}개\n`;
             text += `  전체: ${total}개\n\n`;
             
             // YouTube 결과를 Persona로 자동 전달
             if (data.analysis.left_comments && data.analysis.right_comments &&
                 data.analysis.left_comments.length > 0 && data.analysis.right_comments.length > 0) {
                 text += `\n🔄 AI 페르소나로 데이터 전송 중...\n`;
+                
+                // Step 1 접기, Step 2 펼치기
+                setTimeout(() => {
+                    const step1 = document.getElementById('step1');
+                    const step2 = document.getElementById('step2');
+                    
+                    if (!step1.classList.contains('collapsed')) {
+                        toggleStep('step1');
+                    }
+                    if (step2.classList.contains('collapsed')) {
+                        toggleStep('step2');
+                    }
+                    
+                    // Step 2로 스크롤
+                    step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 500);
+                
                 autoSendToPersona(data.analysis.left_comments, data.analysis.right_comments);
             }
         }
@@ -252,7 +320,8 @@ async function generatePersona() {
         console.log('✅ 토론 시작 성공!');
         
         // 4. 토론 메시지들을 생성 (최대 10개)
-        resultContent.textContent = personaInfo + '\n\n💬 토론 진행 중...\n\n';
+        const debateContainer = document.getElementById('debate-container');
+        debateContainer.innerHTML = '<h4 style="color: #2c3e50; margin-bottom: 16px; font-size: 1.1rem;">💬 실시간 토론</h4>';
         
         for (let i = 0; i < 10; i++) {
             try {
@@ -268,16 +337,27 @@ async function generatePersona() {
                 const nextData = await nextRes.json();
                 const message = nextData.message;
                 
-                // 토론 메시지를 누적해서 표시
-                const sideEmoji = message.side === 'left' ? '👈' : '👉';
-                const sideName = message.side === 'left' ? '좌파' : '우파';
-                resultContent.textContent += `${sideEmoji} ${sideName}: ${message.content}\n\n`;
+                // 토론 메시지를 카드 형태로 표시
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `debate-message ${message.side === 'left' ? 'side-a' : 'side-b'}`;
                 
-                // 스크롤을 결과 영역으로 이동
-                result.scrollTop = result.scrollHeight;
+                const speakerDiv = document.createElement('div');
+                speakerDiv.className = 'debate-speaker';
+                speakerDiv.textContent = message.side === 'left' ? '👈 A 의견' : '👉 B 의견';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'debate-content';
+                contentDiv.textContent = message.content;
+                
+                messageDiv.appendChild(speakerDiv);
+                messageDiv.appendChild(contentDiv);
+                debateContainer.appendChild(messageDiv);
+                
+                // 스크롤을 토론 영역으로 이동
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 
                 // 약간의 딜레이 (너무 빠르면 읽기 힘듦)
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 800));
                 
             } catch (err) {
                 console.error('토론 메시지 생성 오류:', err);
@@ -285,7 +365,12 @@ async function generatePersona() {
             }
         }
         
-        resultContent.textContent += '\n✅ 토론이 완료되었습니다!';
+        // 완료 메시지
+        const completeDiv = document.createElement('div');
+        completeDiv.style.cssText = 'text-align: center; padding: 20px; color: #27ae60; font-weight: 600;';
+        completeDiv.textContent = '✅ 토론이 완료되었습니다!';
+        debateContainer.appendChild(completeDiv);
+        
         console.log('✅ 토론 완료!');
         
     } catch (error) {
