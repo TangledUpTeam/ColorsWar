@@ -11,6 +11,10 @@ dist/
 venv/
 ENV/
 
+# 텍스트 및 오디오 파일 무시
+*.txt
+*.mp3
+
 # 환경 변수 (민감 정보)
 .env
 .env.local
