@@ -221,18 +221,29 @@ class ConfidenceScorer:
                 return False
             
             # timezone-aware 날짜를 naive로 변환 (비교를 위해)
+            now = datetime.now()
             naive_dates = []
             for d in dates:
                 if d.tzinfo is not None:
-                    naive_dates.append(d.replace(tzinfo=None))
+                    d_naive = d.replace(tzinfo=None)
                 else:
-                    naive_dates.append(d)
+                    d_naive = d
+                
+                # 미래 날짜 필터링 (뉴스 날짜가 잘못된 경우)
+                if d_naive <= now:
+                    naive_dates.append(d_naive)
+                else:
+                    print(f"     ⚠️  미래 날짜 무시: {d_naive.strftime('%Y-%m-%d')}")
+            
+            if not naive_dates:
+                print(f"     ⚠️  최신성 판단 실패: 유효한 날짜 0개 (미래 날짜 제외)")
+                return False
             
             most_recent = max(naive_dates)
-            threshold_date = datetime.now() - timedelta(days=30 * self.recent_months)
+            threshold_date = now - timedelta(days=30 * self.recent_months)
             
             is_recent = most_recent >= threshold_date
-            print(f"     📅 최신성 체크: 최신 {most_recent.strftime('%Y-%m-%d')}, 기준 {threshold_date.strftime('%Y-%m-%d')} → {'✓' if is_recent else '✗'}")
+            print(f"     📅 최신성 체크: 최신 {most_recent.strftime('%Y-%m-%d')}, 현재 {now.strftime('%Y-%m-%d')}, 기준 {threshold_date.strftime('%Y-%m-%d')} → {'✓' if is_recent else '✗'}")
             
             return is_recent
             
