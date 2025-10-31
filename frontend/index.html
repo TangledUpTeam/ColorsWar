@@ -12,10 +12,11 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
             min-height: 100vh;
             padding: 20px;
+            color: #2c3e50;
         }
         
         .container {
@@ -24,85 +25,99 @@
         }
         
         .header {
-            background: white;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             margin-bottom: 30px;
             text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
         }
         
         .title {
-            font-size: 3rem;
-            color: #333;
+            font-size: 2.8rem;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 15px;
             font-weight: 700;
+            letter-spacing: -0.5px;
         }
         
         .subtitle {
-            color: #666;
-            font-size: 1.3rem;
+            color: #5a6c7d;
+            font-size: 1.2rem;
             margin-bottom: 20px;
+            font-weight: 400;
         }
         
         .api-link {
             display: inline-block;
             padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
             text-decoration: none;
-            border-radius: 25px;
+            border-radius: 8px;
             font-weight: 600;
             transition: all 0.3s;
             margin: 5px;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
         }
         
         .api-link:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
         }
         
         .modules {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 30px;
+            gap: 24px;
             margin-top: 30px;
         }
         
         .module-card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            transition: all 0.3s;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0,0,0,0.06);
         }
         
         .module-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-color: rgba(52, 152, 219, 0.2);
         }
         
         .module-header {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f3f5;
         }
         
         .module-icon {
-            font-size: 3rem;
+            font-size: 2.5rem;
             margin-right: 15px;
+            filter: grayscale(20%);
         }
         
         .module-title {
-            font-size: 1.8rem;
-            color: #333;
-            font-weight: 700;
+            font-size: 1.6rem;
+            color: #2c3e50;
+            font-weight: 600;
+            letter-spacing: -0.3px;
         }
         
         .module-description {
-            color: #666;
+            color: #5a6c7d;
             margin-bottom: 20px;
-            line-height: 1.6;
+            line-height: 1.7;
+            font-size: 0.95rem;
         }
         
         .feature-list {
@@ -111,102 +126,138 @@
         }
         
         .feature-list li {
-            padding: 8px 0;
-            color: #555;
+            padding: 10px 0;
+            color: #5a6c7d;
             display: flex;
             align-items: center;
+            font-size: 0.95rem;
         }
         
         .feature-list li:before {
             content: "✓";
-            color: #667eea;
+            color: #27ae60;
             font-weight: bold;
-            font-size: 1.2rem;
-            margin-right: 10px;
+            font-size: 1.1rem;
+            margin-right: 12px;
+            background: rgba(39, 174, 96, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .input-group {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
         }
         
         .input-group label {
             display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 0.95rem;
         }
         
         .input-group input,
         .input-group textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
+            padding: 12px 16px;
+            border: 1.5px solid #d1d8e0;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             transition: all 0.3s;
+            background: #ffffff;
+            font-family: inherit;
         }
         
         .input-group input:focus,
         .input-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
         
         .btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: 8px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.25);
         }
         
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
+            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
         }
         
         .btn:disabled {
-            background: #ccc;
+            background: #95a5a6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
         
         .result-box {
             margin-top: 20px;
-            padding: 20px;
-            background: #f5f5f5;
+            padding: 24px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
             border-radius: 10px;
             display: none;
+            border: 1px solid #e1e8ed;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         
         .result-box.show {
             display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .result-title {
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .result-title:before {
+            content: "📊";
+            margin-right: 8px;
         }
         
         .result-content {
-            color: #555;
-            line-height: 1.6;
+            color: #5a6c7d;
+            line-height: 1.8;
             white-space: pre-wrap;
+            font-size: 0.95rem;
+            font-family: 'Courier New', monospace;
+            background: #ffffff;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #e1e8ed;
         }
         
         .loading {
             display: none;
             text-align: center;
-            padding: 20px;
-            color: #667eea;
-            font-weight: 600;
+            padding: 24px;
+            color: #3498db;
+            font-weight: 500;
         }
         
         .loading.show {
@@ -214,13 +265,13 @@
         }
         
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border: 3px solid #e1e8ed;
+            border-top: 3px solid #3498db;
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 12px;
         }
         
         @keyframes spin {
@@ -230,10 +281,17 @@
         
         .footer {
             text-align: center;
-            color: white;
+            color: #7f8c8d;
             margin-top: 50px;
-            padding: 20px;
+            padding: 30px 20px;
             font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .footer p {
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -248,18 +306,18 @@
         
         <!-- 모듈 카드 -->
         <div class="modules">
-            <!-- 1. YouTube 파이프라인 -->
+            <!-- 1. 영상 주제 추출 -->
             <div class="module-card">
                 <div class="module-header">
                     <div class="module-icon">📹</div>
-                    <div class="module-title">YouTube 파이프라인</div>
+                    <div class="module-title">영상 주제 추출</div>
                 </div>
                 <p class="module-description">
                     YouTube 영상의 댓글을 수집하고 분석합니다.
                 </p>
                 <ul class="feature-list">
                     <li>댓글 자동 수집</li>
-                    <li>좌/우 성향 분류</li>
+                    <li>대립 의견 분류</li>
                     <li>주제 추출 (BERTopic)</li>
                     <li>요약 생성</li>
                 </ul>
@@ -267,11 +325,6 @@
                 <div class="input-group">
                     <label>YouTube URL</label>
                     <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=...">
-                </div>
-                
-                <div class="input-group">
-                    <label>토론 주제 (선택)</label>
-                    <input type="text" id="youtube-topic" value="현재 정부 정책">
                 </div>
                 
                 <button class="btn" onclick="runYoutubePipeline()">🧭 주제 검출</button>
@@ -297,20 +350,20 @@
                     수집된 댓글로 AI 페르소나를 생성하고 토론을 시뮬레이션합니다.
                 </p>
                 <ul class="feature-list">
-                    <li>좌/우 페르소나 자동 생성</li>
+                    <li>대립 의견 페르소나 자동 생성</li>
                     <li>말투 & 감정 학습</li>
                     <li>AI 토론 시뮬레이션</li>
                     <li>실시간 대화 생성</li>
                 </ul>
                 
                 <div class="input-group">
-                    <label>좌파 댓글 (5개 이상, 줄바꿈으로 구분)</label>
-                    <textarea id="left-comments" rows="4" placeholder="좌파 댓글 1&#10;좌파 댓글 2&#10;..."></textarea>
+                    <label>A 의견 댓글 (5개 이상, 줄바꿈으로 구분)</label>
+                    <textarea id="left-comments" rows="4" placeholder="A 의견 댓글 1&#10;A 의견 댓글 2&#10;..."></textarea>
                 </div>
                 
                 <div class="input-group">
-                    <label>우파 댓글 (5개 이상, 줄바꿈으로 구분)</label>
-                    <textarea id="right-comments" rows="4" placeholder="우파 댓글 1&#10;우파 댓글 2&#10;..."></textarea>
+                    <label>B 의견 댓글 (5개 이상, 줄바꿈으로 구분)</label>
+                    <textarea id="right-comments" rows="4" placeholder="B 의견 댓글 1&#10;B 의견 댓글 2&#10;..."></textarea>
                 </div>
                 
                 <button class="btn" onclick="generatePersona()">⚖️ 페르소나 생성 & 토론 시작</button>
@@ -368,7 +421,7 @@
         </div>
     </div>
     
-    <script src="/static/app.js?v=3"></script>
+    <script src="/static/app.js?v=6"></script>
 </body>
 </html>
 

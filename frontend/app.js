@@ -76,24 +76,49 @@ function formatYoutubeResult(data) {
     text += `📹 비디오 ID: ${data.video_id}\n\n`;
     
     if (data.summary) {
-        text += `📝 요약:\n${JSON.stringify(data.summary, null, 2)}\n\n`;
+        text += `📝 요약:\n`;
+        if (data.summary.sentences && data.summary.sentences.length > 0) {
+            data.summary.sentences.forEach((s, i) => {
+                text += `  ${i+1}. ${s}\n`;
+            });
+        }
+        if (data.summary.keywords && data.summary.keywords.length > 0) {
+            text += `\n🔑 키워드: ${data.summary.keywords.join(', ')}\n`;
+        }
+        text += `\n`;
     }
     
     if (data.analysis && data.analysis.statistics) {
-        text += `📊 댓글 분석:\n`;
-        text += `  좌파: ${data.analysis.statistics.left_count || 0}개\n`;
-        text += `  우파: ${data.analysis.statistics.right_count || 0}개\n`;
-        text += `  전체: ${data.analysis.statistics.total || 0}개\n\n`;
+        const stats = data.analysis.statistics;
+        const total = stats.total || 0;
+        
+        if (total === 0) {
+            text += `⚠️  댓글 수집 실패\n`;
+            text += `   - 댓글이 비활성화되었거나\n`;
+            text += `   - API 할당량이 초과되었거나\n`;
+            text += `   - 비공개/제한된 영상일 수 있습니다.\n\n`;
+            text += `💡 다른 공개 영상으로 시도해보세요!\n`;
+        } else {
+            text += `📊 댓글 분석:\n`;
+            text += `  좌파: ${stats.left_count || 0}개\n`;
+            text += `  우파: ${stats.right_count || 0}개\n`;
+            text += `  전체: ${total}개\n\n`;
+            
+            // YouTube 결과를 Persona로 자동 전달
+            if (data.analysis.left_comments && data.analysis.right_comments &&
+                data.analysis.left_comments.length > 0 && data.analysis.right_comments.length > 0) {
+                text += `\n🔄 AI 페르소나로 데이터 전송 중...\n`;
+                autoSendToPersona(data.analysis.left_comments, data.analysis.right_comments);
+            }
+        }
     }
     
     if (data.debate && data.debate.length > 0) {
         text += `🎭 토론 결과: ${data.debate.length}개 메시지\n`;
     }
     
-    // YouTube 결과를 Persona로 자동 전달
-    if (data.analysis && data.analysis.left_comments && data.analysis.right_comments) {
-        text += `\n\n🔄 AI 페르소나로 데이터 전송 중...\n`;
-        autoSendToPersona(data.analysis.left_comments, data.analysis.right_comments);
+    if (data.message) {
+        text += `\n📌 ${data.message}\n`;
     }
     
     return text;
