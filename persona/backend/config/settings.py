@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     debater_model_name: str = "skt/kogpt2-base-v2"
     analyzer_model_name: str = "jhgan/ko-alpaca-7b"
     
+    # OpenAI 설정
+    openai_api_key: Optional[str] = Field(default=None, description="OpenAI API Key")
+    openai_model: str = "gpt-4o-mini"  # OpenAI 모델명
+    
     # 디바이스 설정
     device: str = "cpu"  # "cpu" 또는 "cuda"
     use_analyzer_llm: bool = False  # 분석기에서 LLM 사용 여부 (False면 규칙 기반)
