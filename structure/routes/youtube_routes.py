@@ -21,8 +21,6 @@ pipeline = YouTubeFullPipeline(base_dir=Path(__file__).parent.parent)
 
 class YouTubeRequest(BaseModel):
     youtube_url: str
-    topic: str = "현재 정부 정책"
-    rounds: int = 5
 
 
 class YouTubeResponse(BaseModel):
@@ -43,18 +41,13 @@ async def run_youtube_pipeline(request: YouTubeRequest):
     3. 요약 생성
     4. 댓글 수집
     5. 댓글 분석 (좌/우 분류)
-    6. AI 토론 (선택)
     """
     try:
         print(f"\n{'='*60}")
         print(f"YouTube 파이프라인 시작: {request.youtube_url}")
         print(f"{'='*60}\n")
         
-        result = pipeline.run_full_pipeline(
-            youtube_url=request.youtube_url,
-            topic=request.topic,
-            rounds=request.rounds
-        )
+        result = pipeline.run_full_pipeline(youtube_url=request.youtube_url)
         
         if not result:
             raise HTTPException(

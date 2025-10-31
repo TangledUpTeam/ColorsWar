@@ -15,16 +15,12 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from reclassifier import ForceReclassifier
-    from persona_service import PersonaBattleService
+    from reclassifier import ForceReclassifier  # type: ignore
 except Exception:
     # fallback mock if not available
     class ForceReclassifier:
         def batch_reclassify(self, comments):
             return comments
-    class PersonaBattleService:
-        def initialize_personas(self, left, right): pass
-        def start_debate(self, topic, rounds=5): return []
 
 class YouTubeFullPipeline:
     def __init__(self, base_dir: Path = None):
@@ -38,8 +34,7 @@ class YouTubeFullPipeline:
         self.summarizer = Summarizer(self.base_dir)
         self.collector = CommentCollector(self.base_dir)
         self.analyzer = Analyzer(ForceReclassifier())
-        self.saver = ResultsSaver(self.base_dir)
-        self.battle_service = PersonaBattleService()
+        self.saver = ResultsSaver(self.data_dir)
 
     def extract_video_id(self, url_or_id: str) -> str:
         import re
@@ -52,10 +47,10 @@ class YouTubeFullPipeline:
             return q.get("v", [""])[0]
         return ""
 
-    def run_full_pipeline(self, youtube_url: str, topic: str = "현재 정부 정책", rounds: int = 5):
-        print(f"🎬 YouTube 파이프라인 시작: {youtube_url}")
-        
-        # 1단계: 비디오 ID 추출
+    def run_full_pipeline(self, youtube_url: str):
+        print(f"[파이프라인 시작] URL: {youtube_url}")
+
+        # 1) 비디오 ID
         vid = self.extract_video_id(youtube_url)
         print(f"📹 비디오 ID: {vid}")
         if not vid:
@@ -92,19 +87,10 @@ class YouTubeFullPipeline:
         print("🔍 댓글 분석 중...")
         analysis = self.analyzer.analyze_comments(comments, summary_sentences)
         self.saver.save_leftright_comments(vid, analysis.get('comments', []))
-        print(f"🔍 분석 완료: {analysis.get('statistics', {})}")
-        
-        # 7단계: AI 토론
-        print("🎭 AI 토론 시작...")
-        if analysis.get('left_comments') and analysis.get('right_comments'):
-            self.battle_service.initialize_personas(analysis['left_comments'], analysis['right_comments'])
-            debate = self.battle_service.start_debate(topic, rounds=rounds)
-            print(f"🎭 토론 완료: {len(debate)}개 메시지")
-        else:
-            print("❌ 좌파 또는 우파 댓글이 부족하여 토론을 시작할 수 없습니다")
-            debate = []
-        
-        # 8단계: 결과 저장
+        print(f"  통계: {analysis.get('statistics', {})}")
+
+        # 7) 결과 저장
+        debate = []  # 토론 비활성화
         self.saver.save_results(vid, structured, analysis, debate, keywords)
         print("✅ 파이프라인 완료!")
         
@@ -112,9 +98,9 @@ class YouTubeFullPipeline:
 
 # 간단 실행용 스크립트 유지
 def main():
-    import sys, io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    url = "dQw4w9WgXcQ"
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    url = "https://www.youtube.com/watch?v=QES-uZV3-gw"
     p = YouTubeFullPipeline(Path(__file__).parent)
     res = p.run_full_pipeline(url)
     print("완료:", bool(res))
