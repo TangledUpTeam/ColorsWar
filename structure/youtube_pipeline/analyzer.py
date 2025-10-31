@@ -1,6 +1,17 @@
 from typing import List, Dict, Any
 import re
 import math
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# .env 파일 로드 (최상위 .env만 사용)
+ROOT_ENV = Path(__file__).resolve().parents[2] / ".env"
+try:
+    loaded = load_dotenv(ROOT_ENV, override=True)
+    print(f"[dotenv] loaded(root-only): {ROOT_ENV} exists={ROOT_ENV.exists()} loaded={loaded}")
+except Exception as e:
+    print(f"[dotenv] load error: {e}")
 
 def _softmax(a: float, b: float) -> (float, float):
     ma = max(a, b)
@@ -77,10 +88,25 @@ def extract_features(text: str) -> Dict[str, Any]:
     }
 
 class Analyzer:
-    """LLM 없이 키워드/프레임 기반으로만 좌·우 분류"""
+    """댓글 분석 및 정치 성향 분류 Analyzer (OpenAI API 사용)"""
 
     def __init__(self):
-        pass
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            print("⚠️ OPENAI_API_KEY가 설정되지 않았습니다. 키워드 기반 분류를 사용합니다.")
+        else:
+            print("✓ OpenAI API 키 확인 완료")
+        
+        # OpenAI 클라이언트 초기화 (API 키가 있을 때만)
+        self.openai_client = None
+        if self.api_key:
+            try:
+                from openai import OpenAI
+                self.openai_client = OpenAI(api_key=self.api_key)
+                print("✓ OpenAI 클라이언트 초기화 완료")
+            except ImportError:
+                print("⚠️ openai 패키지가 설치되지 않았습니다. 'pip install openai' 실행 필요")
+                self.api_key = None
 
     @staticmethod
     def calculate_similarity(text1: str, text2: str) -> float:
@@ -97,6 +123,84 @@ class Analyzer:
         objs.sort(key=lambda x: x["similarity_score"], reverse=True)
         return objs[:max_comments]
 
+    def _classify_with_openai(self, comment_text: str) -> Dict[str, Any]:
+        """OpenAI API를 사용하여 댓글 분류"""
+        if not self.openai_client:
+            # OpenAI를 사용할 수 없으면 키워드 기반으로 폴백
+            return classify_primary(comment_text)
+        
+        system_prompt = """당신은 대한민국 정치 댓글의 정치 성향을 분석하는 전문가입니다.
+주어진 댓글을 분석하여 좌파 또는 우파로 분류하세요.
+
+좌파 특징: 이재명, 민주당 지지, 복지 확대, 노동권, 검찰개혁, 언론개혁, 대화/평화 외교
+우파 특징: 윤석열, 국민의힘 지지, 시장경제, 법치, 안보 우선, 강경 대응, 동맹 강화
+
+응답 형식: JSON으로 {"label": "좌파" 또는 "우파", "confidence": 0.0~1.0, "reasoning": "간단한 이유"}"""
+
+        try:
+            response = self.openai_client.chat.completions.create(
+                model="gpt-4o-mini",  # 또는 "gpt-3.5-turbo"
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"댓글: {comment_text}"}
+                ],
+                temperature=0.3,
+                max_tokens=150
+            )
+            
+            result_text = response.choices[0].message.content.strip()
+            
+            # JSON 파싱 시도
+            import json
+            try:
+                result = json.loads(result_text)
+                label = result.get("label", "판단불가")
+                confidence = float(result.get("confidence", 0.5))
+                reasoning = result.get("reasoning", "")
+                
+                if label not in ("좌파", "우파"):
+                    label = "판단불가"
+                
+                return {
+                    "label": label,
+                    "confidence": confidence,
+                    "reasoning": reasoning,
+                    "left_prob": confidence if label == "좌파" else 1 - confidence,
+                    "right_prob": confidence if label == "우파" else 1 - confidence,
+                    "features": {"method": "openai", "reasoning": reasoning}
+                }
+            except json.JSONDecodeError:
+                # JSON 파싱 실패 시 텍스트에서 추출
+                if "좌파" in result_text:
+                    return {"label": "좌파", "confidence": 0.7, "left_prob": 0.7, "right_prob": 0.3, 
+                           "features": {"method": "openai", "raw": result_text}}
+                elif "우파" in result_text:
+                    return {"label": "우파", "confidence": 0.7, "left_prob": 0.3, "right_prob": 0.7,
+                           "features": {"method": "openai", "raw": result_text}}
+                else:
+                    # 실패 시 키워드 기반으로 폴백
+                    return classify_primary(comment_text)
+        except Exception as e:
+            print(f"⚠️ OpenAI API 오류: {e} - 키워드 기반으로 폴백")
+            return classify_primary(comment_text)
+
+    def _primary_pass(self, items: List[Dict]) -> List[Dict]:
+        """1차 분류: OpenAI API 또는 키워드 기반"""
+        enriched = []
+        for obj in items:
+            if self.openai_client:
+                res = self._classify_with_openai(obj["text"])
+            else:
+                res = classify_primary(obj["text"])
+            
+            obj["political_orientation"] = res["label"] if res["label"] in ("좌파", "우파") else "판단불가"
+            obj["classification_confidence"] = res["confidence"]
+            obj["left_prob"] = res["left_prob"]
+            obj["right_prob"] = res["right_prob"]
+            obj["features"] = res.get("features", res)
+            enriched.append(obj)
+        return enriched
+
     def analyze_comments(self, comments: List[str], summary_sentences: List[str], top_k: int = 5) -> Dict[str, Any]:
         """
         summaries 기반으로 댓글 분석 후 극좌/극우 댓글 각 top_k개만 추출
@@ -106,32 +210,40 @@ class Analyzer:
             summary_sentences: 영상 요약 문장 리스트
             top_k: 좌파/우파 각각 추출할 극단 댓글 개수 (기본 5개)
         """
-        filtered = self.filter_comments_by_similarity(comments, summary_sentences)
+        filtered = self.filter_comments_by_similarity(comments, summary_sentences, max_comments=500)
         if not filtered:
-            return {'comments': [], 'statistics': {}, 'left_comments': [], 'right_comments': []}
+            return {'comments': [], 'statistics': {}, 'left_comments': [], 'right_comments': [], 'similarity_stats': {}}
 
-        # 모든 댓글 분석
-        analyzed = []
-        for obj in filtered:
-            res = extract_features(obj["text"])
-            obj["political_orientation"] = res["label"]
-            obj["classification_confidence"] = res["confidence"]
-            obj["hits"] = res["hits"]
-            obj["left_score"] = res["left_score"]
-            obj["right_score"] = res["right_score"]
-            obj["extremity_score"] = res["extremity_score"]
-            analyzed.append(obj)
-
-        # 확신도 0.55 미만 제외
-        analyzed = [c for c in analyzed if c["classification_confidence"] >= 0.55]
+        # 1차 분류
+        analyzed = self._primary_pass(filtered)
+        
+        # 확신도 0.55 미만 제외 및 좌/우만 남김
+        analyzed = [c for c in analyzed if c.get('classification_confidence', 0) >= 0.55 
+                    and c.get('political_orientation') in ('좌파', '우파')]
 
         # 좌파/우파 분리
-        left_comments = [c for c in analyzed if c["political_orientation"] == "좌파"]
-        right_comments = [c for c in analyzed if c["political_orientation"] == "우파"]
+        left_comments = [c for c in analyzed if c.get('political_orientation') == '좌파']
+        right_comments = [c for c in analyzed if c.get('political_orientation') == '우파']
+
+        # 극단성 점수 계산: confidence 기반 또는 features의 left/right 점수 차이
+        for c in left_comments:
+            feats = c.get('features', {})
+            if 'left' in feats and 'right' in feats:
+                c['extremity_score'] = feats.get('left', 0) - feats.get('right', 0)
+            else:
+                # OpenAI 분류인 경우 confidence를 극단성 점수로 사용
+                c['extremity_score'] = c.get('classification_confidence', 0.5)
+        for c in right_comments:
+            feats = c.get('features', {})
+            if 'left' in feats and 'right' in feats:
+                c['extremity_score'] = feats.get('right', 0) - feats.get('left', 0)
+            else:
+                # OpenAI 분류인 경우 confidence를 극단성 점수로 사용
+                c['extremity_score'] = c.get('classification_confidence', 0.5)
 
         # 극단성 점수 기준으로 정렬 (높은 순)
-        left_comments.sort(key=lambda x: x["extremity_score"], reverse=True)
-        right_comments.sort(key=lambda x: x["extremity_score"], reverse=True)
+        left_comments.sort(key=lambda x: x.get('extremity_score', 0), reverse=True)
+        right_comments.sort(key=lambda x: x.get('extremity_score', 0), reverse=True)
 
         # 상위 top_k개만 선택
         top_left = left_comments[:top_k]
@@ -145,8 +257,9 @@ class Analyzer:
         stats = {k: {"count": v, "percentage": round(v/total*100, 1)} for k, v in stats.items()}
 
         return {
-            "comments": final,
-            "statistics": stats,
-            "left_comments": [c["text"] for c in top_left],
-            "right_comments": [c["text"] for c in top_right],
+            'comments': final,
+            'statistics': final_stats,
+            'left_comments': [c['text'] for c in top_left],
+            'right_comments': [c['text'] for c in top_right],
+            'similarity_stats': sim_stats
         }
