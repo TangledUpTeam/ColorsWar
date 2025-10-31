@@ -104,8 +104,9 @@ class AIDebater:
 1. 이전에 했던 말을 반복하지 마세요.
 2. 새로운 관점이나 논거를 제시하세요.
 3. 한국어로 자연스럽게 작성하세요.
-4. 댓글 스타일로 간결하게 작성하세요 (2-3문장).
-5. 공격적이거나 무례하지 않게, 하지만 강한 주장을 펼치세요."""
+4. 댓글 스타일로 간결하게 작성하세요 (1~2문장).
+5. 상대방을 비난하세요
+6. 공격적으로 가끔씩 욕도 하고 강한 주장을 펼치세요."""
 
         # 사용자 프롬프트
         user_prompt = f"""현재 토론 주제 키워드: {keywords_str}
@@ -131,7 +132,7 @@ class AIDebater:
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=0.9,  # 다양성을 위해 높은 temperature
-                max_tokens=200,
+                max_tokens=100,
                 presence_penalty=0.6,  # 반복 억제
                 frequency_penalty=0.6   # 반복 억제
             )
@@ -139,7 +140,7 @@ class AIDebater:
             generated_text = response.choices[0].message.content.strip()
             
             # 생성된 응답이 너무 길면 자르기
-            if len(generated_text) > 300:
+            if len(generated_text) > 100:
                 sentences = generated_text.split('.')
                 generated_text = '.'.join(sentences[:3]) + '.'
             
