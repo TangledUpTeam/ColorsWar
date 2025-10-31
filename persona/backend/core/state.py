@@ -34,8 +34,16 @@ class AppState:
         print("🚀 애플리케이션 상태 초기화 중...")
         print("="*60)
         
-        # 페르소나 엔진 초기화
-        self.persona_engine = CommentPersonaEngine()
+        # OpenAI 설정 가져오기
+        from ..config.settings import settings
+        openai_api_key = settings.openai_api_key
+        openai_model = settings.openai_model
+        
+        # 페르소나 엔진 초기화 (OpenAI 설정 전달)
+        self.persona_engine = CommentPersonaEngine(
+            openai_api_key=openai_api_key,
+            model=openai_model
+        )
         
         # 토론 관련 상태
         self.debater_manager = None  # DebaterManager는 토론 시작 시 초기화

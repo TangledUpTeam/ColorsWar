@@ -1,9 +1,10 @@
 """
 토론 관리 서비스
 토론 세션 시작, 메시지 생성, 상태 관리 등의 비즈니스 로직
+keywords 기반 토론 지원
 """
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from ..core.state import AppState
 from ..models import (
     DebateState, DebateMessage, Side, AnalysisResult, 
@@ -20,12 +21,17 @@ class DebateService:
         self.app_state = app_state
         self.persona_engine = app_state.persona_engine
     
-    def start_debate(self, initial_topic: Optional[str] = None) -> Dict:
+    def start_debate(
+        self, 
+        initial_topic: Optional[str] = None,
+        keywords: Optional[List[str]] = None
+    ) -> Dict:
         """
         토론 세션 시작
         
         Args:
             initial_topic: 초기 토론 주제 (선택)
+            keywords: 토론 키워드 리스트 (youtube_full_pipeline에서 전달)
             
         Returns:
             Dict: 토론 시작 정보
@@ -43,20 +49,30 @@ class DebateService:
         dummy_analysis = AnalysisResult(
             left_arguments=[Argument(point="진보", keywords=["개혁"])],
             right_arguments=[Argument(point="보수", keywords=["안정"])],
-            controversial_keywords=["정치"],
+            controversial_keywords=keywords or ["정치"],
             left_emotional_patterns=[EmotionalPattern(pattern="열정적", examples=[])],
             right_emotional_patterns=[EmotionalPattern(pattern="냉정함", examples=[])],
             sample_comments={"left": [], "right": []}
         )
         
-        # DebaterManager 생성
+        # OpenAI API 키 가져오기
+        openai_api_key = settings.openai_api_key
+        openai_model = settings.openai_model
+        
+        # DebaterManager 생성 (keywords 전달)
         self.app_state.debater_manager = DebaterManager(
             dummy_analysis, 
-            self.persona_engine
+            self.persona_engine,
+            openai_api_key=openai_api_key,
+            model=openai_model,
+            keywords=keywords or []
         )
         
         # 토론 초기 상태
         topic = initial_topic or settings.initial_topic
+        if keywords:
+            topic = f"{topic} (키워드: {', '.join(keywords[:3])})"
+        
         self.app_state.current_debate_state = DebateState(
             message_count=0,
             messages=[],
@@ -68,7 +84,8 @@ class DebateService:
         return {
             "message": "토론 시작",
             "state": self.app_state.current_debate_state,
-            "persona_ready": self.persona_engine.is_ready()
+            "persona_ready": self.persona_engine.is_ready(),
+            "keywords": keywords or []
         }
     
     def generate_next_message(self, side: Optional[Side] = None) -> Dict:
@@ -152,4 +169,3 @@ class DebateService:
         """
         self.app_state.reset_debate()
         return {"message": "토론이 초기화되었습니다."}
-
