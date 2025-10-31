@@ -11,7 +11,7 @@ from .models import AnalysisResult, Argument, EmotionalPattern
 class CommentAnalyzer:
     """댓글 분석 엔진 (규칙 기반 + 선택적 LLM)"""
 
-    def __init__(self, use_llm=False):
+    def __init__(self, use_llm=True):  # ✅ 기본값을 True로 변경
         """
         Args:
             use_llm: True면 LLM 사용, False면 규칙 기반 (빠름, 메모리 적게 사용)
@@ -25,8 +25,11 @@ class CommentAnalyzer:
             self.model_name = "jhgan/ko-alpaca-7b"
             self.device = "cpu"
 
-            print(f"⚙️ 감정 분석 LLM 모델 로딩 중: {self.model_name}")
-            print(f"디바이스: {self.device.upper()} (경량 CPU 모드)")
+            print(f"\n{'='*60}")
+            print(f"🧠 감정 분석 LLM 모델 로딩 중...")
+            print(f"{'='*60}")
+            print(f"   모델: {self.model_name}")
+            print(f"   디바이스: {self.device.upper()} (경량 CPU 모드)")
 
             try:
                 self.tokenizer = AutoTokenizer.from_pretrained(
@@ -41,15 +44,19 @@ class CommentAnalyzer:
                     trust_remote_code=True
                 ).to(self.device)
 
-                print("✓ 감정 분석 모델 로딩 완료 (경량 CPU 모드)")
+                print(f"   ✅ {self.model_name} 로딩 완료!")
+                print(f"{'='*60}\n")
             except Exception as e:
-                print(f"⚠ 모델 로딩 실패: {e}")
-                print("→ 규칙 기반 분석으로 자동 전환합니다.")
+                print(f"   ⚠️ 모델 로딩 실패: {e}")
+                print(f"   → 규칙 기반 분석으로 자동 전환합니다.")
+                print(f"{'='*60}\n")
                 self.model = None
                 self.tokenizer = None
                 self.use_llm = False
         else:
+            print("\n{'='*60}")
             print("✓ 규칙 기반 댓글 분석 사용 (빠름, 메모리 효율적)")
+            print(f"{'='*60}\n")
 
     # --------------------------------------------
     # 메인 분석 함수
@@ -68,9 +75,15 @@ class CommentAnalyzer:
     # --------------------------------------------
     def _llm_analysis(self, comments: List[str]) -> AnalysisResult:
         """LLM을 사용한 고급 분석"""
+        print(f"\n{'='*60}")
+        print(f"🔍 jhgan/ko-alpaca-7b 모델로 감정 분석 중...")
+        print(f"{'='*60}")
+        print(f"   분석할 댓글 수: {len(comments[:30])}개")
+        
         prompt = self._create_analysis_prompt(comments[:30])  # 최대 30개만 사용
 
         try:
+            print(f"   ⏳ 모델 추론 중...")
             inputs = self.tokenizer(
                 prompt,
                 return_tensors="pt",
@@ -91,10 +104,24 @@ class CommentAnalyzer:
             generated = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
             response = generated[len(prompt):].strip()
 
-            return self._parse_llm_response(response, comments)
+            print(f"   ✅ 감정 분석 완료!")
+            print(f"{'='*60}\n")
+            
+            result = self._parse_llm_response(response, comments)
+            
+            # 분석 결과 출력
+            print(f"📊 감정 분석 결과:")
+            print(f"   좌파 논점: {len(result.left_arguments)}개")
+            print(f"   우파 논점: {len(result.right_arguments)}개")
+            print(f"   논쟁 키워드: {len(result.controversial_keywords)}개")
+            print()
+            
+            return result
 
         except Exception as e:
-            print(f"⚠ LLM 분석 오류: {e}")
+            print(f"   ⚠️ LLM 분석 오류: {e}")
+            print(f"   → 규칙 기반 분석으로 폴백")
+            print(f"{'='*60}\n")
             return self._simple_analysis(comments)
 
     # --------------------------------------------

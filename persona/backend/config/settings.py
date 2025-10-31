@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     debater_model_name: str = "skt/kogpt2-base-v2"
     analyzer_model_name: str = "jhgan/ko-alpaca-7b"
     
+    # OpenAI 설정
+    openai_api_key: Optional[str] = Field(default=None, description="OpenAI API Key")
+    openai_model: str = "gpt-4o-mini"  # OpenAI 모델명
+    
     # 디바이스 설정
     device: str = "cpu"  # "cpu" 또는 "cuda"
     use_analyzer_llm: bool = False  # 분석기에서 LLM 사용 여부 (False면 규칙 기반)
@@ -43,10 +47,18 @@ class Settings(BaseSettings):
     topic_change_interval_min: int = 8
     topic_change_interval_max: int = 12
     
+    # 외부 API 키 (다른 모듈에서 사용, persona 모듈에서는 미사용)
+    youtube_data_api_key: Optional[str] = None
+    naver_client_id: Optional[str] = None
+    naver_client_secret: Optional[str] = None
+    ollama_url: Optional[str] = None
+    ollama_model: Optional[str] = None
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # 추가 필드 무시 (Pydantic v2)
 
 
 # 싱글톤 인스턴스

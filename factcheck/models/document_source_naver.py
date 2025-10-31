@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from typing import List
 from datetime import datetime
 import os
-from models.document_source import DocumentSource, Document
+from .document_source import DocumentSource, Document
 
 
 class NaverNewsSearchSource(DocumentSource):
@@ -285,7 +285,7 @@ class KoreanNewsSearchSource(DocumentSource):
         
         # DuckDuckGo 대안
         try:
-            from models.document_source import DuckDuckGoSearchSource
+            from .document_source import DuckDuckGoSearchSource
             self.ddgs = DuckDuckGoSearchSource(max_results=max_results)
             self.has_ddgs = True
         except:

@@ -17,10 +17,10 @@ from typing import List, Optional
 import os
 from dotenv import load_dotenv
 
-from models.evidence_searcher import EvidenceSearcher
-from models.judge_local import LocalFactCheckJudge
-from models.confidence_scorer import ConfidenceScorer
-from models.document_source_universal import UniversalNewsSearchSource
+from .models.evidence_searcher import EvidenceSearcher
+from .models.judge_local import LocalFactCheckJudge
+from .models.confidence_scorer import ConfidenceScorer
+from .models.document_source_universal import UniversalNewsSearchSource
 
 # 환경변수 로드
 load_dotenv()
@@ -47,10 +47,12 @@ judge = None
 scorer = None
 
 
-@app.on_event("startup")
-async def startup_event():
-    """서버 시작 시 시스템 초기화"""
+def initialize_system():
+    """팩트체크 시스템 초기화 (지연 초기화)"""
     global searcher, judge, scorer
+    
+    if searcher and judge and scorer:
+        return  # 이미 초기화됨
     
     print("🚀 팩트체크 시스템 초기화 중...")
     
@@ -80,7 +82,18 @@ async def startup_event():
     
     except Exception as e:
         print(f"❌ 초기화 실패: {e}")
+        import traceback
+        traceback.print_exc()
         raise
+
+
+@app.on_event("startup")
+async def startup_event():
+    """서버 시작 시 시스템 초기화 시도 (실패해도 계속 진행)"""
+    try:
+        initialize_system()
+    except Exception as e:
+        print(f"⚠️  시작 시 초기화 실패, 첫 요청 시 재시도: {e}")
 
 
 # Request/Response 모델
@@ -161,8 +174,15 @@ async def factcheck(request: FactCheckRequest):
     Returns:
         팩트체크 결과 (verdict, confidence, evidences 등)
     """
+    # 지연 초기화 (첫 요청 시 초기화)
     if not searcher or not judge or not scorer:
-        raise HTTPException(status_code=503, detail="시스템 초기화 중입니다")
+        try:
+            initialize_system()
+        except Exception as e:
+            raise HTTPException(
+                status_code=503, 
+                detail=f"시스템 초기화 실패: {str(e)}"
+            )
     
     try:
         claim = request.claim.strip()
@@ -236,8 +256,15 @@ async def batch_factcheck(request: BatchFactCheckRequest):
     Returns:
         팩트체크 결과 리스트
     """
+    # 지연 초기화 (첫 요청 시 초기화)
     if not searcher or not judge or not scorer:
-        raise HTTPException(status_code=503, detail="시스템 초기화 중입니다")
+        try:
+            initialize_system()
+        except Exception as e:
+            raise HTTPException(
+                status_code=503, 
+                detail=f"시스템 초기화 실패: {str(e)}"
+            )
     
     try:
         results = []

@@ -8,8 +8,8 @@ from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer, util
 import numpy as np
 
-from utils.text_processing import split_into_sentences, normalize_score, clean_text
-from models.document_source import DocumentSource, LocalDocumentSource, Document
+from ..utils.text_processing import split_into_sentences, normalize_score, clean_text
+from .document_source import DocumentSource, LocalDocumentSource, Document
 
 
 class EvidenceSnippet:

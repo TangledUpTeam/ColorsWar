@@ -2,23 +2,84 @@
 
 const API_BASE = window.location.origin;
 
-// ==================== YouTube 파이프라인 ====================
-async function runYoutubePipeline() {
-    const url = document.getElementById('youtube-url').value;
-    const topic = document.getElementById('youtube-topic').value;
+// ==================== UI 유틸리티 ====================
+function toggleStep(stepId) {
+    const step = document.getElementById(stepId);
+    const icon = step.querySelector('.toggle-icon');
     
-    if (!url) {
+    step.classList.toggle('collapsed');
+    icon.textContent = step.classList.contains('collapsed') ? '▶' : '▼';
+}
+
+function addLog(logId, message, type = 'info') {
+    const logEl = document.getElementById(logId);
+    if (!logEl) return;
+    
+    const logLine = document.createElement('div');
+    logLine.className = `log-line log-${type}`;
+    logLine.textContent = message;
+    logEl.appendChild(logLine);
+    
+    // 자동 스크롤
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+function clearLog(logId) {
+    const logEl = document.getElementById(logId);
+    if (logEl) {
+        logEl.innerHTML = '<div class="log-line log-info">🚀 분석 시작...</div>';
+    }
+}
+
+// ==================== YouTube 파이프라인 ====================
+function normalizeYouTubeUrl(inputUrl) {
+    try {
+        const u = new URL(inputUrl);
+        // youtu.be short link → watch?v=
+        if (u.hostname === 'youtu.be') {
+            const id = u.pathname.slice(1);
+            if (id) return `https://www.youtube.com/watch?v=${id}`;
+        }
+        // shorts → watch?v=
+        if (u.hostname.includes('youtube.com') && u.pathname.startsWith('/shorts/')) {
+            const id = u.pathname.split('/')[2];
+            if (id) return `https://www.youtube.com/watch?v=${id}`;
+        }
+        return inputUrl;
+    } catch (e) {
+        return inputUrl;
+    }
+}
+
+async function runYoutubePipeline() {
+    const rawUrl = document.getElementById('youtube-url').value;
+    
+    if (!rawUrl) {
         alert('YouTube URL을 입력해주세요');
         return;
     }
+    const url = normalizeYouTubeUrl(rawUrl);
     
     const loading = document.getElementById('youtube-loading');
+    const logBox = document.getElementById('youtube-log');
     const result = document.getElementById('youtube-result');
     const resultContent = document.getElementById('youtube-result-content');
     
     try {
+        // UI 초기화
         loading.classList.add('show');
+        logBox.classList.add('show');
         result.classList.remove('show');
+        clearLog('youtube-log');
+        
+        // 로그 시작
+        addLog('youtube-log', '📹 비디오 ID 추출 중...', 'info');
+        addLog('youtube-log', '🎵 오디오 다운로드 중...', 'info');
+        
+        setTimeout(() => addLog('youtube-log', '🎤 음성 전사 중... (1~2분 소요)', 'info'), 500);
+        setTimeout(() => addLog('youtube-log', '📝 요약 생성 중...', 'info'), 1000);
+        setTimeout(() => addLog('youtube-log', '💬 댓글 수집 중...', 'info'), 1500);
+        setTimeout(() => addLog('youtube-log', '🔍 대립 의견 분류 중...', 'info'), 2000);
         
         const response = await fetch(`${API_BASE}/api/structure/youtube-pipeline`, {
             method: 'POST',
@@ -27,7 +88,7 @@ async function runYoutubePipeline() {
             },
             body: JSON.stringify({
                 youtube_url: url,
-                topic: topic,
+                topic: "영상 주제",
                 rounds: 5
             })
         });
@@ -35,8 +96,11 @@ async function runYoutubePipeline() {
         const data = await response.json();
         
         if (!response.ok) {
+            addLog('youtube-log', `❌ 오류: ${data.detail || '처리 실패'}`, 'error');
             throw new Error(data.detail || '처리 실패');
         }
+        
+        addLog('youtube-log', '✅ 분석 완료!', 'success');
         
         // 결과 표시
         resultContent.textContent = formatYoutubeResult(data);
@@ -44,6 +108,7 @@ async function runYoutubePipeline() {
         
     } catch (error) {
         alert(`오류 발생: ${error.message}`);
+        addLog('youtube-log', `❌ ${error.message}`, 'error');
     } finally {
         loading.classList.remove('show');
     }
@@ -56,24 +121,72 @@ function formatYoutubeResult(data) {
     text += `📹 비디오 ID: ${data.video_id}\n\n`;
     
     if (data.summary) {
-        text += `📝 요약:\n${JSON.stringify(data.summary, null, 2)}\n\n`;
+        text += `📝 요약:\n`;
+        if (data.summary.sentences && data.summary.sentences.length > 0) {
+            data.summary.sentences.forEach((s, i) => {
+                text += `  ${i+1}. ${s}\n`;
+            });
+        }
+        if (data.summary.keywords && data.summary.keywords.length > 0) {
+            text += `\n🔑 키워드: ${data.summary.keywords.join(', ')}\n`;
+        }
+        text += `\n`;
     }
     
     if (data.analysis && data.analysis.statistics) {
-        text += `📊 댓글 분석:\n`;
-        text += `  좌파: ${data.analysis.statistics.left_count || 0}개\n`;
-        text += `  우파: ${data.analysis.statistics.right_count || 0}개\n`;
-        text += `  전체: ${data.analysis.statistics.total || 0}개\n\n`;
+        const stats = data.analysis.statistics;
+        
+        // 백엔드 응답 구조: {'좌파': {count: N, percentage: X}, '우파': {count: M, percentage: Y}}
+        const leftCount = stats['좌파']?.count || 0;
+        const rightCount = stats['우파']?.count || 0;
+        const undeterminedCount = stats['판단불가']?.count || 0;
+        const total = leftCount + rightCount + undeterminedCount;
+        
+        if (total === 0) {
+            text += `⚠️  댓글 수집 실패\n`;
+            text += `   - 댓글이 비활성화되었거나\n`;
+            text += `   - API 할당량이 초과되었거나\n`;
+            text += `   - 비공개/제한된 영상일 수 있습니다.\n\n`;
+            text += `💡 다른 공개 영상으로 시도해보세요!\n`;
+        } else {
+            text += `📊 댓글 분석:\n`;
+            text += `  A 의견: ${leftCount}개 (${stats['좌파']?.percentage || 0}%)\n`;
+            text += `  B 의견: ${rightCount}개 (${stats['우파']?.percentage || 0}%)\n`;
+            text += `  판단불가: ${undeterminedCount}개\n`;
+            text += `  전체: ${total}개\n\n`;
+            
+            // YouTube 결과를 Persona로 자동 전달
+            if (data.analysis.left_comments && data.analysis.right_comments &&
+                data.analysis.left_comments.length > 0 && data.analysis.right_comments.length > 0) {
+                text += `\n🔄 AI 페르소나로 데이터 전송 중...\n`;
+                
+                // Step 1 접기, Step 2 펼치기
+                setTimeout(() => {
+                    const step1 = document.getElementById('step1');
+                    const step2 = document.getElementById('step2');
+                    
+                    if (!step1.classList.contains('collapsed')) {
+                        toggleStep('step1');
+                    }
+                    if (step2.classList.contains('collapsed')) {
+                        toggleStep('step2');
+                    }
+                    
+                    // Step 2로 스크롤
+                    step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 500);
+                
+                autoSendToPersona(data.analysis.left_comments, data.analysis.right_comments);
+            }
+        }
     }
     
     if (data.debate && data.debate.length > 0) {
         text += `🎭 토론 결과: ${data.debate.length}개 메시지\n`;
     }
     
-    // YouTube 결과를 Persona로 자동 전달
-    if (data.analysis && data.analysis.left_comments && data.analysis.right_comments) {
-        text += `\n\n🔄 AI 페르소나로 데이터 전송 중...\n`;
-        autoSendToPersona(data.analysis.left_comments, data.analysis.right_comments);
+    if (data.message) {
+        text += `\n📌 ${data.message}\n`;
     }
     
     return text;
@@ -118,11 +231,16 @@ async function generatePersona() {
     const leftText = document.getElementById('left-comments').value;
     const rightText = document.getElementById('right-comments').value;
     
-    const leftComments = leftText.split('\n').filter(c => c.trim());
-    const rightComments = rightText.split('\n').filter(c => c.trim());
+    // <br> 태그를 실제 줄바꿈으로 변환
+    const leftComments = leftText.replace(/<br\s*\/?>/gi, '\n').split('\n').filter(c => c.trim());
+    const rightComments = rightText.replace(/<br\s*\/?>/gi, '\n').split('\n').filter(c => c.trim());
     
-    if (leftComments.length < 1 || rightComments.length < 1) {
-        alert('좌파와 우파 댓글을 각각 1개 이상 입력해주세요');
+    console.log('📊 전송할 댓글 수:', { left: leftComments.length, right: rightComments.length });
+    console.log('📝 좌파 댓글 샘플:', leftComments.slice(0, 3));
+    console.log('📝 우파 댓글 샘플:', rightComments.slice(0, 3));
+    
+    if (leftComments.length < 5 || rightComments.length < 5) {
+        alert(`좌파와 우파 댓글을 각각 5개 이상 입력해주세요\n현재: 좌파 ${leftComments.length}개, 우파 ${rightComments.length}개`);
         return;
     }
     
@@ -134,33 +252,39 @@ async function generatePersona() {
         loading.classList.add('show');
         result.classList.remove('show');
         
-        // 1. 좌파 댓글 등록
-        for (const comment of leftComments) {
-            await fetch(`${API_BASE}/api/persona/api/comments/left`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    comment_text: comment
-                })
-            });
+        // 1. 좌파/우파 댓글 배치 등록 (백엔드 스키마: { comments: string[] })
+        console.log('🚀 좌파 댓글 전송 중...');
+        const leftRes = await fetch(`${API_BASE}/api/persona/api/comments/left`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comments: leftComments })
+        });
+
+        if (!leftRes.ok) {
+            const err = await leftRes.json().catch(() => ({}));
+            console.error('❌ 좌파 댓글 등록 실패:', err);
+            throw new Error(err.detail || '좌파 댓글 등록 실패');
         }
+        const leftData = await leftRes.json();
+        console.log('✅ 좌파 댓글 등록 성공:', leftData);
         
-        // 2. 우파 댓글 등록
-        for (const comment of rightComments) {
-            await fetch(`${API_BASE}/api/persona/api/comments/right`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    comment_text: comment
-                })
-            });
+        console.log('🚀 우파 댓글 전송 중...');
+        const rightRes = await fetch(`${API_BASE}/api/persona/api/comments/right`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comments: rightComments })
+        });
+        
+        if (!rightRes.ok) {
+            const err = await rightRes.json().catch(() => ({}));
+            console.error('❌ 우파 댓글 등록 실패:', err);
+            throw new Error(err.detail || '우파 댓글 등록 실패');
         }
-        
-        // 3. 페르소나 생성
+        const rightData = await rightRes.json();
+        console.log('✅ 우파 댓글 등록 성공:', rightData);
+         
+        // 2. 페르소나 생성
+        console.log('🚀 페르소나 생성 요청 중...');
         const response = await fetch(`${API_BASE}/api/persona/api/comments/generate-persona`, {
             method: 'POST'
         });
@@ -168,14 +292,89 @@ async function generatePersona() {
         const data = await response.json();
         
         if (!response.ok) {
+            console.error('❌ 페르소나 생성 실패:', data);
             throw new Error(data.detail || '페르소나 생성 실패');
         }
         
-        // 결과 표시
-        resultContent.textContent = formatPersonaResult(data);
+        console.log('✅ 페르소나 생성 성공!');
+        
+        // 페르소나 정보를 먼저 표시
+        let personaInfo = formatPersonaResult(data);
+        resultContent.textContent = personaInfo + '\n\n🚀 토론을 시작합니다...\n';
         result.classList.add('show');
         
+        // 3. 자동으로 토론 시작
+        console.log('🚀 토론 시작 요청 중...');
+        const debateStartRes = await fetch(`${API_BASE}/api/persona/api/debate/start`, {
+            method: 'POST'
+        });
+        
+        if (!debateStartRes.ok) {
+            const err = await debateStartRes.json().catch(() => ({}));
+            console.error('⚠️ 토론 시작 실패:', err);
+            resultContent.textContent = personaInfo + '\n\n⚠️ 페르소나는 생성되었으나 토론 시작에 실패했습니다.\n' + (err.detail || '');
+            return;
+        }
+        
+        const debateData = await debateStartRes.json();
+        console.log('✅ 토론 시작 성공!');
+        
+        // 4. 토론 메시지들을 생성 (최대 10개)
+        const debateContainer = document.getElementById('debate-container');
+        debateContainer.innerHTML = '<h4 style="color: #2c3e50; margin-bottom: 16px; font-size: 1.1rem;">💬 실시간 토론</h4>';
+        
+        for (let i = 0; i < 10; i++) {
+            try {
+                const nextRes = await fetch(`${API_BASE}/api/persona/api/debate/next`, {
+                    method: 'POST'
+                });
+                
+                if (!nextRes.ok) {
+                    console.log('토론 종료 또는 오류');
+                    break;
+                }
+                
+                const nextData = await nextRes.json();
+                const message = nextData.message;
+                
+                // 토론 메시지를 카드 형태로 표시
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `debate-message ${message.side === 'left' ? 'side-a' : 'side-b'}`;
+                
+                const speakerDiv = document.createElement('div');
+                speakerDiv.className = 'debate-speaker';
+                speakerDiv.textContent = message.side === 'left' ? '👈 A 의견' : '👉 B 의견';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'debate-content';
+                contentDiv.textContent = message.content;
+                
+                messageDiv.appendChild(speakerDiv);
+                messageDiv.appendChild(contentDiv);
+                debateContainer.appendChild(messageDiv);
+                
+                // 스크롤을 토론 영역으로 이동
+                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // 약간의 딜레이 (너무 빠르면 읽기 힘듦)
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+            } catch (err) {
+                console.error('토론 메시지 생성 오류:', err);
+                break;
+            }
+        }
+        
+        // 완료 메시지
+        const completeDiv = document.createElement('div');
+        completeDiv.style.cssText = 'text-align: center; padding: 20px; color: #27ae60; font-weight: 600;';
+        completeDiv.textContent = '✅ 토론이 완료되었습니다!';
+        debateContainer.appendChild(completeDiv);
+        
+        console.log('✅ 토론 완료!');
+        
     } catch (error) {
+        console.error('❌ 오류:', error);
         alert(`오류 발생: ${error.message}`);
     } finally {
         loading.classList.remove('show');
@@ -189,16 +388,23 @@ function formatPersonaResult(data) {
     
     if (data.left_persona) {
         text += `👈 좌파 페르소나:\n`;
-        text += `${JSON.stringify(data.left_persona, null, 2)}\n\n`;
+        const lp = data.left_persona;
+        text += `  📝 요약: ${lp.summary || 'N/A'}\n`;
+        text += `  💎 가치관: ${(lp.values || []).join(', ')}\n`;
+        text += `  🗣️ 말투: ${(lp.tone || []).join(', ')}\n`;
+        text += `  😊 감정: ${lp.emotion || 'N/A'}\n`;
+        text += `  🔑 키워드: ${(lp.keywords || []).slice(0, 5).join(', ')}\n\n`;
     }
     
     if (data.right_persona) {
         text += `👉 우파 페르소나:\n`;
-        text += `${JSON.stringify(data.right_persona, null, 2)}\n\n`;
+        const rp = data.right_persona;
+        text += `  📝 요약: ${rp.summary || 'N/A'}\n`;
+        text += `  💎 가치관: ${(rp.values || []).join(', ')}\n`;
+        text += `  🗣️ 말투: ${(rp.tone || []).join(', ')}\n`;
+        text += `  😊 감정: ${rp.emotion || 'N/A'}\n`;
+        text += `  🔑 키워드: ${(rp.keywords || []).slice(0, 5).join(', ')}\n\n`;
     }
-    
-    text += `\n💡 이제 토론을 시작할 수 있습니다!\n`;
-    text += `API: POST /api/persona/api/debate/start\n`;
     
     return text;
 }
