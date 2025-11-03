@@ -22,6 +22,7 @@ from persona.backend.routes import (
 )
 from structure.routes.youtube_routes import router as youtube_router
 from structure.routes.topic_routes import router as topic_router
+from claim_extraction.api import router as claim_extraction_router
 
 app = FastAPI(
     title="ColorWar - 정치 댓글 분석 시스템",
@@ -48,6 +49,7 @@ app.include_router(debate_router, prefix="/api/persona", tags=["Persona - 토론
 app.include_router(persona_health_router, prefix="/api/persona", tags=["Persona - 상태"])
 app.include_router(youtube_router, prefix="/api/structure", tags=["Structure - YouTube"])
 app.include_router(topic_router, prefix="/api/structure", tags=["Structure - 주제분석"])
+app.include_router(claim_extraction_router, tags=["주장 추출"])
 
 @app.get("/", response_class=HTMLResponse)
 async def root():

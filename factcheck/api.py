@@ -117,6 +117,13 @@ class EvidenceResponse(BaseModel):
     relevance: float
 
 
+class SearchMetadata(BaseModel):
+    """검색 메타데이터"""
+    total_found: int = 0
+    excluded_count: int = 0
+    returned_count: int = 0
+
+
 class FactCheckResponse(BaseModel):
     claim: str
     verdict: str
@@ -125,6 +132,7 @@ class FactCheckResponse(BaseModel):
     reasoning: str
     evidences: List[EvidenceResponse]
     score_breakdown: dict
+    search_metadata: Optional[SearchMetadata] = None
 
 
 class BatchFactCheckRequest(BaseModel):
@@ -187,21 +195,72 @@ async def factcheck(request: FactCheckRequest):
     try:
         claim = request.claim.strip()
         
+        print(f"🔍 [팩트체크 요청] 받은 주장: '{claim}'")
+        
         if not claim:
             raise HTTPException(status_code=400, detail="주장이 비어있습니다")
         
         # 1) Evidence 검색
-        evidences = searcher.search(claim)
+        print(f"📥 [검색 시작] 주장: '{claim}'")
         
-        if not evidences:
+        try:
+            evidences = searcher.search(claim)
+        except ValueError as e:
+            # 검색 결과가 없거나 스니펫 생성 실패
+            error_msg = str(e)
+            print(f"⚠️  검색 실패: {error_msg}")
+            
+            # 수집된 문서 수 확인
+            doc_count = 0
+            if "수집된 문서:" in error_msg:
+                try:
+                    doc_count = int(error_msg.split("수집된 문서:")[1].split("개")[0].strip())
+                except:
+                    pass
+            
+            # 판정 로직
+            if doc_count == 0:
+                # 문서 0개 = 검색 자체가 안됨 = 판단 불가
+                verdict = "Uncertain"
+                reasoning = "관련 뉴스나 자료를 찾을 수 없습니다. 검색어를 바꿔보세요."
+                confidence = 1.0
+            elif doc_count <= 2:
+                # 문서 1~2개 = 관련 뉴스가 거의 없음 = 거짓일 가능성
+                verdict = "False"
+                reasoning = f"관련 뉴스가 매우 적습니다 ({doc_count}개). 해당 주장은 사실이 아니거나 확인되지 않은 정보일 가능성이 높습니다."
+                confidence = 3.0
+            else:
+                # 문서는 있지만 스니펫 생성 실패 = 내용이 너무 짧거나 품질 낮음 = 거짓
+                verdict = "False"
+                reasoning = f"수집된 자료({doc_count}개)의 품질이 낮거나 관련성이 부족합니다. 해당 주장은 확인되지 않은 정보일 가능성이 높습니다."
+                confidence = 3.5
+            
             return FactCheckResponse(
                 claim=claim,
-                verdict="Uncertain",
-                confidence_score=1.0,
-                confidence_level="매우 낮음",
-                reasoning="관련 Evidence를 찾을 수 없습니다.",
+                verdict=verdict,
+                confidence_score=confidence,
+                confidence_level="낮음" if confidence < 5 else "매우 낮음",
+                reasoning=reasoning,
                 evidences=[],
-                score_breakdown={}
+                score_breakdown={"문서_수": doc_count, "스니펫_생성": "실패"},
+                search_metadata=SearchMetadata(total_found=doc_count, excluded_count=0, returned_count=0)
+            )
+        
+        if not evidences:
+            # 문서는 수집되었지만 관련도가 낮아 모두 제외된 경우
+            # = 검색은 되지만 관련 내용이 없음 = 거짓일 가능성
+            metadata = searcher._last_search_metadata if hasattr(searcher, '_last_search_metadata') else {}
+            total_found = metadata.get('total_found', 0)
+            
+            return FactCheckResponse(
+                claim=claim,
+                verdict="False",
+                confidence_score=2.5,
+                confidence_level="매우 낮음",
+                reasoning=f"수집된 자료({total_found}개) 중 관련성 있는 증거를 찾을 수 없습니다. 해당 주장은 확인되지 않은 정보일 가능성이 높습니다.",
+                evidences=[],
+                score_breakdown={"문서_수": total_found, "관련_증거": 0},
+                search_metadata=SearchMetadata(total_found=total_found, excluded_count=total_found, returned_count=0)
             )
         
         # 2) 판정
@@ -238,7 +297,8 @@ async def factcheck(request: FactCheckRequest):
                 )
                 for ev in evidences
             ],
-            score_breakdown=confidence.breakdown
+            score_breakdown=confidence.breakdown,
+            search_metadata=SearchMetadata(**searcher._last_search_metadata) if hasattr(searcher, '_last_search_metadata') else None
         )
     
     except Exception as e:

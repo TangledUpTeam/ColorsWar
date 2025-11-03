@@ -8,6 +8,7 @@ from typing import List
 import re
 from .document_source import DocumentSource, Document, DuckDuckGoSearchSource
 from .document_source_naver import NaverNewsSearchSource
+from ..utils.text_processing import extract_keywords
 
 
 class UniversalNewsSearchSource(DocumentSource):
@@ -108,8 +109,12 @@ class UniversalNewsSearchSource(DocumentSource):
         """
         print(f"  🌐 범용 뉴스 검색 (한국 + 외국): {query}")
         
-        # 키워드 추출 (검색 품질 향상)
-        search_keywords = self._extract_keywords(query)
+        # 키워드 추출 (검색 품질 향상) - 개선된 버전 사용
+        search_keywords = extract_keywords(query, max_keywords=3)
+        
+        # 디버깅: 키워드 추출 결과 출력
+        if search_keywords != query:
+            print(f"    🔑 키워드 최적화: '{query}' → '{search_keywords}' (제품명 정규화 + 불용어 제거)")
         
         all_documents = []
         
