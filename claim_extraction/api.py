@@ -33,7 +33,65 @@ class ClaimExtractionResponse(BaseModel):
 @router.post("/extract", response_model=ClaimExtractionResponse)
 async def extract_claims(request: ClaimExtractionRequest):
     """
-    스크립트 + 댓글 통합 분석 → 팩트체크 포인트 1~3개 추출
+    주요 댓글 5개 추출 (날것 그대로)
+    
+    Args:
+        video_id: YouTube 비디오 ID
+        top_k: 추출할 댓글 개수 (기본 5개)
+    
+    Returns:
+        주요 댓글 리스트 (원본 그대로)
+    """
+    try:
+        print(f"💬 [주요 댓글 추출 요청] 비디오 ID: {request.video_id}, top_k: {request.top_k}")
+        
+        # 댓글에서 주요 댓글 추출 (원본 그대로)
+        main_comments = extractor.extract_from_file(
+            video_id=request.video_id,
+            base_dir=Path(__file__).resolve().parents[1] / "structure" / "data"
+        )
+        
+        if not main_comments:
+            return ClaimExtractionResponse(
+                success=False,
+                video_id=request.video_id,
+                claims=[],
+                message="주요 댓글을 찾을 수 없습니다."
+            )
+        
+        # top_k 적용
+        main_comments = main_comments[:request.top_k or 5]
+        
+        print(f"✅ {len(main_comments)}개 주요 댓글 추출 완료")
+        
+        return ClaimExtractionResponse(
+            success=True,
+            video_id=request.video_id,
+            claims=main_comments,
+            message=f"{len(main_comments)}개의 주요 댓글을 추출했습니다."
+        )
+    
+    except FileNotFoundError as e:
+        print(f"❌ 파일 없음: {e}")
+        raise HTTPException(
+            status_code=404,
+            detail=f"데이터 파일을 찾을 수 없습니다: {request.video_id}"
+        )
+    
+    except Exception as e:
+        print(f"❌ 주요 댓글 추출 오류: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"주요 댓글 추출 실패: {str(e)}"
+        )
+
+
+@router.post("/extract-factcheck-points", response_model=ClaimExtractionResponse)
+async def extract_factcheck_points_endpoint(request: ClaimExtractionRequest):
+    """
+    스크립트 + 댓글 통합 분석 → 팩트체크 포인트 0~3개 추출
     
     Args:
         video_id: YouTube 비디오 ID
@@ -43,7 +101,7 @@ async def extract_claims(request: ClaimExtractionRequest):
         팩트체크 포인트 리스트 (가공된 문장)
     """
     try:
-        print(f"📋 [팩트체크 포인트 추출 요청] 비디오 ID: {request.video_id}, top_k: {request.top_k}")
+        print(f"🔍 [팩트체크 포인트 추출 요청] 비디오 ID: {request.video_id}, top_k: {request.top_k}")
         
         # 스크립트 + 댓글 통합 분석
         factcheck_points = extractor.extract_factcheck_points(
@@ -57,7 +115,7 @@ async def extract_claims(request: ClaimExtractionRequest):
                 success=False,
                 video_id=request.video_id,
                 claims=[],
-                message="팩트체크 가능한 주장을 찾을 수 없습니다."
+                message="팩트체크 포인트를 찾을 수 없습니다."
             )
         
         print(f"✅ {len(factcheck_points)}개 팩트체크 포인트 추출 완료")
